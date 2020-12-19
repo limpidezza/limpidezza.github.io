@@ -1,0 +1,198 @@
+
+<!DOCTYPE html>
+<html lang="en" class="loading">
+<head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+    <meta name="viewport" content="width=device-width, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>大数据平台的基本逻辑 - Hexo</title>
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="google" content="notranslate" />
+    <meta name="keywords" content="Fechin,"> 
+    <meta name="description" content="如今的应用导向逐渐从计算密集型演变为数据密集型，也就是说计算速度并不是导致系统能力不足的关键因素，关键在于数据量，数据格式以及数据的变化。应运而生的大数据技术包括HBase，Kafka，Spark等,"> 
+    <meta name="author" content="John Doe"> 
+    <link rel="alternative" href="atom.xml" title="Hexo" type="application/atom+xml"> 
+    <link rel="icon" href="/img/favicon.png"> 
+    
+    
+<link rel="stylesheet" href="/css/diaspora.css">
+
+	<script async src="//pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+    <script>
+         (adsbygoogle = window.adsbygoogle || []).push({
+              google_ad_client: "ca-pub-8691406134231910",
+              enable_page_level_ads: true
+         });
+    </script>
+    <script async custom-element="amp-auto-ads"
+        src="https://cdn.ampproject.org/v0/amp-auto-ads-0.1.js">
+    </script>
+<meta name="generator" content="Hexo 5.2.0"></head>
+
+<body class="loading">
+    <span id="config-title" style="display:none">Hexo</span>
+    <div id="loader"></div>
+    <div id="single">
+    <div id="top" style="display: block;">
+    <div class="bar" style="width: 0;"></div>
+    <a class="iconfont icon-home image-icon" href="javascript:;" data-url="http://example.com"></a>
+    <div title="播放/暂停" class="iconfont icon-play"></div>
+    <h3 class="subtitle">大数据平台的基本逻辑</h3>
+    <div class="social">
+        <div>
+            <div class="share">
+                <a title="获取二维码" class="iconfont icon-scan" href="javascript:;"></a>
+            </div>
+            <div id="qr"></div>
+        </div>
+    </div>
+    <div class="scrollbar"></div>
+</div>
+
+    <div class="section">
+        <div class="article">
+    <div class='main'>
+        <h1 class="title">大数据平台的基本逻辑</h1>
+        <div class="stuff">
+            <span>十二月 19, 2020</span>
+            
+  <ul class="post-tags-list" itemprop="keywords"><li class="post-tags-list-item"><a class="post-tags-list-link" href="/tags/%E5%A4%A7%E6%95%B0%E6%8D%AE/" rel="tag">大数据</a></li></ul>
+
+
+        </div>
+        <div class="content markdown">
+            <p>如今的应用导向逐渐从计算密集型演变为数据密集型，也就是说计算速度并不是导致系统能力不足的关键因素，关键在于数据量，数据格式以及数据的变化。应运而生的大数据技术包括HBase，Kafka，Spark等成为行业内典型的解决方案。</p>
+<p>根据Oracle在<a target="_blank" rel="noopener" href="https://www.oracle.com/assets/oracle-wp-big-data-refarch-2019930.pdf">2013年发表的论文</a>，我们很容易看出在行业早期，大数据能做什么已经有了相当明确的指导。<br><img src="https://upload-images.jianshu.io/upload_images/4926805-9a0e1b6dbaf57ddd.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="Big Data &amp; Analytics Reference Architecture Conceptual View"><br>总结来看就是</p>
+<ul>
+<li>对于多结构数据的管理，包括存储管理以及快速查询</li>
+<li>实时的数据分析，包括一些可视化的监控以及方案分析等</li>
+<li>智能分析，包括应用于智能推荐，企业决策制定，包括物联网应用以及边缘计算等。</li>
+</ul>
+<p>我们可以简略的画出一套大数据平台的设计图。<br><img src="https://upload-images.jianshu.io/upload_images/4926805-4c8c024c344621b8.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="大数据平台基础设计"></p>
+<p>在实际应用中我们的数据源可能会有多种来源，比如多个业务部门的数据库，或是收集的日志，或是在互联网上爬取的数据，对于这些来源的数据有各自不同的处理方式，比如异构数据仓库同步可以选择DataX，Sqoop，Heka等。日志收集可以使用filebeat，logstash等。爬取的数据可能还得需要放到自定义的清洗组件中进行初步清洗，这些数据经过初步的ETL（提取-转换-装载）可以进行统一的数据管理，在方法论中我们称为<strong>数据湖</strong>。<br>之后根据不同业务功能会做进一步的<strong>数据计算处理</strong>，技术栈基本选为spark等，可以使用spark+kafka的stream处理实时的任务，也可以直接提交离线任务。<br>计算完毕的数据，可以存入放入<strong>数据仓库</strong>中，通过数据仓库建立的业务如数据API，基础计算指标，SSO,完整的训练模型等，我们称为<strong>数据市场</strong>，数据仓库中的数据已经具备了与业务交涉的能力，后续的可以根据数据市场提供的服务或者数据进行报表展示，监控指标可视化，智能决策等。</p>
+<h3 id="数据管理"><a href="#数据管理" class="headerlink" title="数据管理"></a>数据管理</h3><p>从技术角度来看，<a target="_blank" rel="noopener" href="https://research.google.com/archive/bigtable.html">google发表的Bigtable论文</a>因为有大量实际应用的案例支撑，相关的设计可以很好的解决大规模多结构数据的存储与管理，可以很好的支撑数据湖的概念。也就是说，我们可以把企业的所有数据资产放到数据湖中统一管理，根据AWS上给出数据湖的概念如下：</p>
+<blockquote>
+<p>数据湖是一个集中式存储库，允许您以任意规模存储所有结构化和非结构化数据。您可以按原样存储数据（无需先对数据进行结构化处理）<br><img src="https://upload-images.jianshu.io/upload_images/4926805-46213a589c577270.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="AWS数据湖概念"></p>
+</blockquote>
+<p>关于数据湖的具体方案基本都是基于Hadoop生态上的，可以选择Bigtable对应的开源实现HBase，或是Hive，甚至也可以选择RDBMS。</p>
+<h3 id="数据计算处理"><a href="#数据计算处理" class="headerlink" title="数据计算处理"></a>数据计算处理</h3><p>这部分建设，其间处理的数据和业务细节息息相关，所以有各种千差万别的方案，不同的方式会遇到各式各样的问题，可以说，在这整个数据流水线上对数据的ETL决定了大数据平台基础的好坏。<br>通常有两种任务方式<br><strong>实时任务</strong>，通常处理使用spark+kafka的流式计算，这种计算方案服务于一些可视化平台需要的实时指标计算，以及实时采集系统等。<br><strong>离线任务</strong>，通过yarn资源管理提交的机器学习模型训练，数据打标，分类，预测，以及结构化处理。</p>
+<p>针对之上的两种任务，自然衍生出了一些问题</p>
+<ul>
+<li>数据治理，包括保证数据的质量，数据脱敏，血缘分析，数据生命周期，以及数据分类估算数据价值等。</li>
+<li>发生故障时，需要及时的警报，尤其是实时任务出现故障， 该如何快速定位？该如何构建出一套全链路追踪系统？</li>
+<li>复杂的workflow，这可能不适用于大多数企业，往往一个定时系统完全cover的住整个workflow，但是随着业务发展，各个业务之前相互依赖，构建一套完成的workflow体系就成了整个平台的重点。</li>
+<li>资源管理，虽然有了yarn可以帮助我们做资源调度。但是有些时候，任务的优先级可能基于各种指标，一些任务的资源调度得根据实际的集群资源需求来合理分配，整个资源调度流程该如何把控？</li>
+<li>权限管理，当建设的大数据平台属于各部门间通用的基础设施，权限管理，以及用户行为的审计。</li>
+</ul>
+<h3 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h3><p>当然之后的数据仓库存储，以及数据市场已经逐渐偏离出大数据平台基础功能的范畴。在这里不在详细展开讨论。<br>总结来说，搭建一套大数据计算平台并不难，我们可以选择现成的开源方案<a target="_blank" rel="noopener" href="http://ambari.apache.org/">apache ambari</a>在很短的时间内完成搭建。但正所谓“家家有本难念的经”，各个业务部门的垂直化，以及workflow的差异，在开源组件之上，还需要有大量的开发工作。在企业内部，我们究竟有没有必要搭建一套通用的大数据平台？还是先根据各个部门垂直业务定制化各自搭建开发管理？通用化建设方案方便管理，各部门业务更加整合，集中统一协调调度方便快速，做决策代价更低。但是随之而来的是平台技术栈的急剧提升，以及在平台建设初期遇到的各种故障，是否是企业当前可以接受的？可以说一套通用的大数据平台建设得投入一定的人员成本，且经过一段时间的沉淀才能产生实际的效益。垂直化方案可以快速的搭建一套简单定制化的平台，一个部门只需要一两个人力维持平台业务的稳定，以及对应的个性化开发。相反的，在整体的资源利用率以及数据整合方面就需要打些折扣了。<br>适合自己的才是最好的，如果一味照搬没有任何出路可言。</p>
+
+            <!--[if lt IE 9]><script>document.createElement('audio');</script><![endif]-->
+            <audio id="audio" loop="1" preload="auto" controls="controls" data-autoplay="false">
+                <source type="audio/mpeg" src="">
+            </audio>
+            
+                <ul id="audio-list" style="display:none">
+                    
+                        
+                            <li title='0' data-url='http://link.hhtjim.com/163/425570952.mp3'></li>
+                        
+                    
+                        
+                            <li title='1' data-url='http://link.hhtjim.com/163/425570952.mp3'></li>
+                        
+                    
+                </ul>
+            
+        </div>
+        
+    <div id='gitalk-container' class="comment link"
+		data-enable='false'
+        data-ae='false'
+        data-ci=''
+        data-cs=''
+        data-r=''
+        data-o=''
+        data-a=''
+        data-d='false'
+    >查看评论</div>
+
+
+    </div>
+    
+</div>
+
+
+    </div>
+</div>
+</body>
+
+
+<script src="//lib.baomitu.com/jquery/1.8.3/jquery.min.js"></script>
+<script src="/js/plugin.js"></script>
+<script src="/js/typed.js"></script>
+<script src="/js/diaspora.js"></script>
+
+
+<link rel="stylesheet" href="/photoswipe/photoswipe.css">
+<link rel="stylesheet" href="/photoswipe/default-skin/default-skin.css">
+
+
+<script src="/photoswipe/photoswipe.min.js"></script>
+<script src="/photoswipe/photoswipe-ui-default.min.js"></script>
+
+
+<!-- Root element of PhotoSwipe. Must have class pswp. -->
+<div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
+    <!-- Background of PhotoSwipe. 
+         It's a separate element as animating opacity is faster than rgba(). -->
+    <div class="pswp__bg"></div>
+    <!-- Slides wrapper with overflow:hidden. -->
+    <div class="pswp__scroll-wrap">
+        <!-- Container that holds slides. 
+            PhotoSwipe keeps only 3 of them in the DOM to save memory.
+            Don't modify these 3 pswp__item elements, data is added later on. -->
+        <div class="pswp__container">
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+        </div>
+        <!-- Default (PhotoSwipeUI_Default) interface on top of sliding area. Can be changed. -->
+        <div class="pswp__ui pswp__ui--hidden">
+            <div class="pswp__top-bar">
+                <!--  Controls are self-explanatory. Order can be changed. -->
+                <div class="pswp__counter"></div>
+                <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+                <button class="pswp__button pswp__button--share" title="Share"></button>
+                <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+                <button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button>
+                <!-- Preloader demo http://codepen.io/dimsemenov/pen/yyBWoR -->
+                <!-- element will get class pswp__preloader--active when preloader is running -->
+                <div class="pswp__preloader">
+                    <div class="pswp__preloader__icn">
+                      <div class="pswp__preloader__cut">
+                        <div class="pswp__preloader__donut"></div>
+                      </div>
+                    </div>
+                </div>
+            </div>
+            <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
+                <div class="pswp__share-tooltip"></div> 
+            </div>
+            <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+            </button>
+            <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)">
+            </button>
+            <div class="pswp__caption">
+                <div class="pswp__caption__center"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+
+
+
+</html>
