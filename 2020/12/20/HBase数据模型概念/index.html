@@ -1,0 +1,199 @@
+
+<!DOCTYPE html>
+<html lang="en" class="loading">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="referrer" content="no-referrer"/>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+    <meta name="viewport" content="width=device-width, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>HBase数据模型概念 - Hexo</title>
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="google" content="notranslate" />
+    <meta name="keywords" content="Fechin,"> 
+    <meta name="description" content="
+本文所述版本为HBase2.X
+
+从HBase官方文档的说法，HBase是一个multi-dimensional map（多维表），BigTable论文中也称BigTable为”sparse,di,"> 
+    <meta name="author" content="John Doe"> 
+    <link rel="alternative" href="atom.xml" title="Hexo" type="application/atom+xml"> 
+    <link rel="icon" href="/img/favicon.png"> 
+    
+    
+<link rel="stylesheet" href="/css/diaspora.css">
+
+	<script async src="//pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+    <script>
+         (adsbygoogle = window.adsbygoogle || []).push({
+              google_ad_client: "ca-pub-8691406134231910",
+              enable_page_level_ads: true
+         });
+    </script>
+    <script async custom-element="amp-auto-ads"
+        src="https://cdn.ampproject.org/v0/amp-auto-ads-0.1.js">
+    </script>
+<meta name="generator" content="Hexo 5.2.0"></head>
+
+<body class="loading">
+    <span id="config-title" style="display:none">Hexo</span>
+    <div id="loader"></div>
+    <div id="single">
+    <div id="top" style="display: block;">
+    <div class="bar" style="width: 0;"></div>
+    <a class="iconfont icon-home image-icon" href="javascript:;" data-url="http://example.com"></a>
+    <div title="播放/暂停" class="iconfont icon-play"></div>
+    <h3 class="subtitle">HBase数据模型概念</h3>
+    <div class="social">
+        <div>
+            <div class="share">
+                <a title="获取二维码" class="iconfont icon-scan" href="javascript:;"></a>
+            </div>
+            <div id="qr"></div>
+        </div>
+    </div>
+    <div class="scrollbar"></div>
+</div>
+
+    <div class="section">
+        <div class="article">
+    <div class='main'>
+        <h1 class="title">HBase数据模型概念</h1>
+        <div class="stuff">
+            <span>十二月 20, 2020</span>
+            
+  <ul class="post-tags-list" itemprop="keywords"><li class="post-tags-list-item"><a class="post-tags-list-link" href="/tags/%E5%A4%A7%E6%95%B0%E6%8D%AE/" rel="tag">大数据</a></li></ul>
+
+
+        </div>
+        <div class="content markdown">
+            <blockquote>
+<p><em>本文所述版本为HBase2.X</em></p>
+</blockquote>
+<p>从<a target="_blank" rel="noopener" href="https://hbase.apache.org/2.2/book.html#datamodel">HBase官方文档</a>的说法，HBase是一个<strong>multi-dimensional map</strong>（多维表），BigTable论文中也称BigTable为”sparse,distributed, persistent multidimensional sorted map”，这个说法可以根据它的整个表设计来看。在HBase的表设计中，有Row，Column，Column Family，Column Qualifier，Cell，Timestamp。</p>
+<ul>
+<li>Row，HBase中的一行由行键和一列或多列与它们相关联的值组成。在每一行中有一个非常重要的概念叫做rowkey，它是依照顺序字母去排序的，这样的好处是它的scan操作可以得到很好的优化，带来的问题是，如果分布不均匀的化，在分布式的存储中，将会造成一块数据存储在同一个region，对于单节点压力过大的问题。所以通常对于rowkey的设计是使用例如SHA-1的散列算法作为开头，然后拼接实际的业务Id。</li>
+<li>Column，HBase中的列由列族和列限定符组成，它们由:（冒号）字符分隔。</li>
+<li>Column Family，在HBase中一个列簇的数据是存储在一起的，一个列簇下可以有多个列。在通常的设计中，一般不建议设计过多的列簇。这样做的目的是size较大的数据和小size的关键数据可以分列簇存储，在一些查询操作中可以做到高效。</li>
+<li>cell：单元格，由五元组（row, column, timestamp, type, value）组成的结构，代表该值的版本。</li>
+<li>Column Qualifier，一个columnfamily下可以设置任意多个qualifier，因此可以理解为HBase中的列可以动态增加，理论上甚至可以扩展到上百万列。比如<code>content:html</code>,<code>content:pdf</code>，content为列簇，html和pdf为列名。</li>
+<li>timestamp，时间戳，每个cell在写入HBase的时候都会默认分配一个时间戳作为该cell的版本，当然，用户也可以在写入的时候自带时间戳。<h2 id="视图"><a href="#视图" class="headerlink" title="视图"></a>视图</h2>在说物理视图和逻辑视图之前，我们先说说两者之间的区别。</li>
+</ul>
+<p><strong>物理视图</strong>指反映当前系统的组织机构、输入输出、资源利用情况和日常数据处理过程的模型。<br><strong>逻辑视图</strong>指在物理模型的基础上进行分析，区分出本质的和非本质的因素，去掉那些非本质的因素，特别是非本质的物理因素，从而形成反映系统本质的模型。<br>从HBase角度来讲，我们大体可以理解为逻辑视图是我们看待HBase整个表用存储结构整体的视图结构，物理视图则是其中的一些细节部分，以及逻辑视图没能表现出来的细节。</p>
+<h3 id="逻辑视图"><a href="#逻辑视图" class="headerlink" title="逻辑视图"></a>逻辑视图</h3><p>从官网文档的一张图来看<br><img src="https://upload-images.jianshu.io/upload_images/4926805-4d81f8c0f6a2283d.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="逻辑视图webtable表"><br> 有一个名为webtable的表，其中包含两行（com.cnn.www和com.example.www）和三个列族，分别名为content，anchor和people。 在此示例中，对于第一行（com.cnn.www），列簇anchor包含两列（anchor：cssnsi.com，anchor：my.look.ca），列簇contents包含一列（contents：html）。 示例包含行键com.cnn.www的行的5个版本，以及行键com.example.www的行的一个版本。 content：html列限定符包含给定网站的整个HTML。 anchor列簇的列均包含链接到该行表示的站点的外部站点，以及在其链接的anchor中使用的文本。 people列簇代表与该站点关联的人员。</p>
+<h3 id="物理视图"><a href="#物理视图" class="headerlink" title="物理视图"></a>物理视图</h3><p><img src="https://upload-images.jianshu.io/upload_images/4926805-ebef6d3fda2ecf3b.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="ColumnFamily anchor"></p>
+<p><img src="https://upload-images.jianshu.io/upload_images/4926805-63f60057e8786e8a.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="ColumnFamily contents"></p>
+<p>概念视图中显示的空单元格根本不存储。 因此，在时间戳记t8处对content：html列的值的请求将不返回任何值。但是，如果未提供时间戳，则将返回特定列的最新值。 给定多个版本时候，因为时间戳以降序存储，所以最新的也是找到的第一个版本。因此，如果未指定时间戳，则对com.cnn.www行中所有列的值的请求将是：来自时间戳t6的content：html的值，来自时间戳t9的anchor：cnnsi.com的值， 时间戳记t8中的anchor：my.look.ca。</p>
+<h2 id="Namespace"><a href="#Namespace" class="headerlink" title="Namespace"></a>Namespace</h2><p>命名空间是表的逻辑分组，类似于关系数据库系统中的数据库。</p>
+<h2 id="Version"><a href="#Version" class="headerlink" title="Version"></a>Version</h2><p>在HBase中版本是降序存储的，所以，如果不指定版本获取数据，将拿到最新版本。<br>版本的设计结构如下</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">hbase&gt; alter ‘t1′, NAME &#x3D;&gt; ‘f1′, VERSIONS &#x3D;&gt; 5</span><br></pre></td></tr></table></figure>
+<p>##Join<br>HBase不支持Join操作。<br>但是，这并不意味着不能进行联表查询，而意味着得自己去做。 两种主要策略是在写入HBase时对数据进行非规范化，也就是说把数据存储在一张表中。或者在应用执行中具有添加一个查找表，进行两个表的关联。 </p>
+
+            <!--[if lt IE 9]><script>document.createElement('audio');</script><![endif]-->
+            <audio id="audio" loop="1" preload="auto" controls="controls" data-autoplay="false">
+                <source type="audio/mpeg" src="">
+            </audio>
+            
+                <ul id="audio-list" style="display:none">
+                    
+                        
+                            <li title='0' data-url='http://link.hhtjim.com/163/425570952.mp3'></li>
+                        
+                    
+                        
+                            <li title='1' data-url='http://link.hhtjim.com/163/425570952.mp3'></li>
+                        
+                    
+                </ul>
+            
+        </div>
+        
+    <div id='gitalk-container' class="comment link"
+		data-enable='false'
+        data-ae='false'
+        data-ci=''
+        data-cs=''
+        data-r=''
+        data-o=''
+        data-a=''
+        data-d='false'
+    >查看评论</div>
+
+
+    </div>
+    
+</div>
+
+
+    </div>
+</div>
+</body>
+
+
+<script src="//lib.baomitu.com/jquery/1.8.3/jquery.min.js"></script>
+<script src="/js/plugin.js"></script>
+<script src="/js/typed.js"></script>
+<script src="/js/diaspora.js"></script>
+
+
+<link rel="stylesheet" href="/photoswipe/photoswipe.css">
+<link rel="stylesheet" href="/photoswipe/default-skin/default-skin.css">
+
+
+<script src="/photoswipe/photoswipe.min.js"></script>
+<script src="/photoswipe/photoswipe-ui-default.min.js"></script>
+
+
+<!-- Root element of PhotoSwipe. Must have class pswp. -->
+<div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
+    <!-- Background of PhotoSwipe. 
+         It's a separate element as animating opacity is faster than rgba(). -->
+    <div class="pswp__bg"></div>
+    <!-- Slides wrapper with overflow:hidden. -->
+    <div class="pswp__scroll-wrap">
+        <!-- Container that holds slides. 
+            PhotoSwipe keeps only 3 of them in the DOM to save memory.
+            Don't modify these 3 pswp__item elements, data is added later on. -->
+        <div class="pswp__container">
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+        </div>
+        <!-- Default (PhotoSwipeUI_Default) interface on top of sliding area. Can be changed. -->
+        <div class="pswp__ui pswp__ui--hidden">
+            <div class="pswp__top-bar">
+                <!--  Controls are self-explanatory. Order can be changed. -->
+                <div class="pswp__counter"></div>
+                <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+                <button class="pswp__button pswp__button--share" title="Share"></button>
+                <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+                <button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button>
+                <!-- Preloader demo http://codepen.io/dimsemenov/pen/yyBWoR -->
+                <!-- element will get class pswp__preloader--active when preloader is running -->
+                <div class="pswp__preloader">
+                    <div class="pswp__preloader__icn">
+                      <div class="pswp__preloader__cut">
+                        <div class="pswp__preloader__donut"></div>
+                      </div>
+                    </div>
+                </div>
+            </div>
+            <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
+                <div class="pswp__share-tooltip"></div> 
+            </div>
+            <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+            </button>
+            <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)">
+            </button>
+            <div class="pswp__caption">
+                <div class="pswp__caption__center"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+
+
+
+</html>
