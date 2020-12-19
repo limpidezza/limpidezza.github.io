@@ -86,7 +86,7 @@
 <h2 id="Namespace"><a href="#Namespace" class="headerlink" title="Namespace"></a>Namespace</h2><p>命名空间是表的逻辑分组，类似于关系数据库系统中的数据库。</p>
 <h2 id="Version"><a href="#Version" class="headerlink" title="Version"></a>Version</h2><p>在HBase中版本是降序存储的，所以，如果不指定版本获取数据，将拿到最新版本。<br>版本的设计结构如下</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">hbase&gt; alter ‘t1′, NAME &#x3D;&gt; ‘f1′, VERSIONS &#x3D;&gt; 5</span><br></pre></td></tr></table></figure>
-<p>##Join<br>HBase不支持Join操作。<br>但是，这并不意味着不能进行联表查询，而意味着得自己去做。 两种主要策略是在写入HBase时对数据进行非规范化，也就是说把数据存储在一张表中。或者在应用执行中具有添加一个查找表，进行两个表的关联。 </p>
+<h2 id="Join"><a href="#Join" class="headerlink" title="Join"></a>Join</h2><p>HBase不支持Join操作。<br>但是，这并不意味着不能进行联表查询，而意味着得自己去做。 两种主要策略是在写入HBase时对数据进行非规范化，也就是说把数据存储在一张表中。或者在应用执行中具有添加一个查找表，进行两个表的关联。 </p>
 
             <!--[if lt IE 9]><script>document.createElement('audio');</script><![endif]-->
             <audio id="audio" loop="1" preload="auto" controls="controls" data-autoplay="false">
