@@ -1,0 +1,197 @@
+
+<!DOCTYPE html>
+<html lang="en" class="loading">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="referrer" content="no-referrer"/>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+    <meta name="viewport" content="width=device-width, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>HBase的应用关键点 - Hexo</title>
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="google" content="notranslate" />
+    <meta name="keywords" content="Fechin,"> 
+    <meta name="description" content="表创建HBase的表创建可以通过hbase shell和Java API。另外如果需要对列簇进行修改的时候，需要先去disable表。通过Java API修改列簇例如
+123456789101112,"> 
+    <meta name="author" content="John Doe"> 
+    <link rel="alternative" href="atom.xml" title="Hexo" type="application/atom+xml"> 
+    <link rel="icon" href="/img/favicon.png"> 
+    
+    
+<link rel="stylesheet" href="/css/diaspora.css">
+
+	<script async src="//pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+    <script>
+         (adsbygoogle = window.adsbygoogle || []).push({
+              google_ad_client: "ca-pub-8691406134231910",
+              enable_page_level_ads: true
+         });
+    </script>
+    <script async custom-element="amp-auto-ads"
+        src="https://cdn.ampproject.org/v0/amp-auto-ads-0.1.js">
+    </script>
+<meta name="generator" content="Hexo 5.2.0"></head>
+
+<body class="loading">
+    <span id="config-title" style="display:none">Hexo</span>
+    <div id="loader"></div>
+    <div id="single">
+    <div id="top" style="display: block;">
+    <div class="bar" style="width: 0;"></div>
+    <a class="iconfont icon-home image-icon" href="javascript:;" data-url="http://example.com"></a>
+    <div title="播放/暂停" class="iconfont icon-play"></div>
+    <h3 class="subtitle">HBase的应用关键点</h3>
+    <div class="social">
+        <div>
+            <div class="share">
+                <a title="获取二维码" class="iconfont icon-scan" href="javascript:;"></a>
+            </div>
+            <div id="qr"></div>
+        </div>
+    </div>
+    <div class="scrollbar"></div>
+</div>
+
+    <div class="section">
+        <div class="article">
+    <div class='main'>
+        <h1 class="title">HBase的应用关键点</h1>
+        <div class="stuff">
+            <span>十二月 20, 2020</span>
+            
+  <ul class="post-tags-list" itemprop="keywords"><li class="post-tags-list-item"><a class="post-tags-list-link" href="/tags/%E5%A4%A7%E6%95%B0%E6%8D%AE/" rel="tag">大数据</a></li></ul>
+
+
+        </div>
+        <div class="content markdown">
+            <h2 id="表创建"><a href="#表创建" class="headerlink" title="表创建"></a>表创建</h2><p>HBase的表创建可以通过<code>hbase shell</code>和<code>Java API</code>。另外如果需要对列簇进行修改的时候，需要先去disable表。<br>通过Java API修改列簇例如</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">Configuration config &#x3D; HBaseConfiguration.create();</span><br><span class="line">Admin admin &#x3D; new Admin(conf);</span><br><span class="line">TableName table &#x3D; TableName.valueOf(&quot;myTable&quot;);</span><br><span class="line"></span><br><span class="line">admin.disableTable(table);</span><br><span class="line"></span><br><span class="line">HColumnDescriptor cf1 &#x3D; ...;</span><br><span class="line">admin.addColumn(table, cf1);      &#x2F;&#x2F; adding new ColumnFamily</span><br><span class="line">HColumnDescriptor cf2 &#x3D; ...;</span><br><span class="line">admin.modifyColumn(table, cf2);    &#x2F;&#x2F; modifying existing ColumnFamily</span><br><span class="line"></span><br><span class="line">admin.enableTable(table);</span><br></pre></td></tr></table></figure>
+<h2 id="表设计关键点"><a href="#表设计关键点" class="headerlink" title="表设计关键点"></a>表设计关键点</h2><p>因为数据集千差万别，有很多不同的期望，所以根据官网的这些经验只是作为一个参考。</p>
+<ul>
+<li>每个region的size保持在10–50G</li>
+<li>每个cell最好不要超过10MB，如果使用<a target="_blank" rel="noopener" href="https://hbase.apache.org/2.2/book.html#hbase_mob">HBaseMob</a>，不要超过50MB。否则，直接存储数据到HDFS上，然后存储一个指标索引到HBase中。</li>
+<li>一个典型的表设计在1–3个列簇。</li>
+<li>一张表中region数量最好在50–100个，一个region上存储的是列簇数据的连续段。</li>
+<li>保证列簇的名字尽可能的短，列簇名在每个value中都有存储，不要认为它类似于RDBMS表中的列名一样，具备解释说明的含义。</li>
+<li>如果说rowkey的设计是基于时间线或者日志信息来设计的，对表操作的读写，基本会落在新region上，较旧的数据不会进行太多读写操作，这时候可以允许多region的存储。</li>
+<li>如果只有一个列簇有比较大规模的写入请求，且只有写入请求占用内存，这时候可以调配内存资源在写入模式上。</li>
+</ul>
+<h2 id="RegionServer的设计关键点"><a href="#RegionServer的设计关键点" class="headerlink" title="RegionServer的设计关键点"></a>RegionServer的设计关键点</h2><blockquote>
+<p> Personally I would place the maximum disk space per machine that can be served exclusively with HBase around 6T, unless you have a very read-heavy workload. In that case the Java heap should be 32GB (20G regions, 128M memstores, the rest defaults).<br> — Lars Hofhansl</p>
+</blockquote>
+<p>从这段指导原则来看，我们在搭建HBase集群的时候，尽可能的使用大机器来做regionserver。对于写操作而言，每个region 20G大小，可以设置128M的memstores。</p>
+<h3 id="列簇的设计"><a href="#列簇的设计" class="headerlink" title="列簇的设计"></a>列簇的设计</h3><p>对于列簇而言，设计原则是尽可能的少，如果是有两个列簇，尽可能的保证数量size一致。因为如果一个列簇A行有100万，列簇B行有10亿。这时候因为列簇A分配在多个region上，会导致其scan的效率过低。</p>
+<h3 id="rowkey的设计"><a href="#rowkey的设计" class="headerlink" title="rowkey的设计"></a>rowkey的设计</h3><p>rowkey的设计关键点就是防止热点数据的产生，也就防止把数据都集中在少数的region上，导致读写效率的问题。要设计一个好的rowkey，就需要给rowkey进行Salting，通用的方式就是使用散列算法添加前缀。例如：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">a-foo0003</span><br><span class="line">b-foo0001</span><br><span class="line">c-foo0003</span><br><span class="line">c-foo0004</span><br><span class="line">d-foo0002</span><br></pre></td></tr></table></figure>
+<p>关于rowkey的设计还有很多需要注意的地方，在此不做展开讨论。</p>
+<h3 id="版本的设计"><a href="#版本的设计" class="headerlink" title="版本的设计"></a>版本的设计</h3><p>不建议将最大版本数设置为过高的水平（例如，数百个或更多），除非非常需要那些旧值，因为这会大大增加StoreFile的大小。</p>
+
+            <!--[if lt IE 9]><script>document.createElement('audio');</script><![endif]-->
+            <audio id="audio" loop="1" preload="auto" controls="controls" data-autoplay="false">
+                <source type="audio/mpeg" src="">
+            </audio>
+            
+                <ul id="audio-list" style="display:none">
+                    
+                        
+                            <li title='0' data-url='http://link.hhtjim.com/163/425570952.mp3'></li>
+                        
+                    
+                        
+                            <li title='1' data-url='http://link.hhtjim.com/163/425570952.mp3'></li>
+                        
+                    
+                </ul>
+            
+        </div>
+        
+    <div id='gitalk-container' class="comment link"
+		data-enable='false'
+        data-ae='false'
+        data-ci=''
+        data-cs=''
+        data-r=''
+        data-o=''
+        data-a=''
+        data-d='false'
+    >查看评论</div>
+
+
+    </div>
+    
+</div>
+
+
+    </div>
+</div>
+</body>
+
+
+<script src="//lib.baomitu.com/jquery/1.8.3/jquery.min.js"></script>
+<script src="/js/plugin.js"></script>
+<script src="/js/typed.js"></script>
+<script src="/js/diaspora.js"></script>
+
+
+<link rel="stylesheet" href="/photoswipe/photoswipe.css">
+<link rel="stylesheet" href="/photoswipe/default-skin/default-skin.css">
+
+
+<script src="/photoswipe/photoswipe.min.js"></script>
+<script src="/photoswipe/photoswipe-ui-default.min.js"></script>
+
+
+<!-- Root element of PhotoSwipe. Must have class pswp. -->
+<div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
+    <!-- Background of PhotoSwipe. 
+         It's a separate element as animating opacity is faster than rgba(). -->
+    <div class="pswp__bg"></div>
+    <!-- Slides wrapper with overflow:hidden. -->
+    <div class="pswp__scroll-wrap">
+        <!-- Container that holds slides. 
+            PhotoSwipe keeps only 3 of them in the DOM to save memory.
+            Don't modify these 3 pswp__item elements, data is added later on. -->
+        <div class="pswp__container">
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+        </div>
+        <!-- Default (PhotoSwipeUI_Default) interface on top of sliding area. Can be changed. -->
+        <div class="pswp__ui pswp__ui--hidden">
+            <div class="pswp__top-bar">
+                <!--  Controls are self-explanatory. Order can be changed. -->
+                <div class="pswp__counter"></div>
+                <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+                <button class="pswp__button pswp__button--share" title="Share"></button>
+                <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+                <button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button>
+                <!-- Preloader demo http://codepen.io/dimsemenov/pen/yyBWoR -->
+                <!-- element will get class pswp__preloader--active when preloader is running -->
+                <div class="pswp__preloader">
+                    <div class="pswp__preloader__icn">
+                      <div class="pswp__preloader__cut">
+                        <div class="pswp__preloader__donut"></div>
+                      </div>
+                    </div>
+                </div>
+            </div>
+            <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
+                <div class="pswp__share-tooltip"></div> 
+            </div>
+            <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+            </button>
+            <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)">
+            </button>
+            <div class="pswp__caption">
+                <div class="pswp__caption__center"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+
+
+
+</html>
