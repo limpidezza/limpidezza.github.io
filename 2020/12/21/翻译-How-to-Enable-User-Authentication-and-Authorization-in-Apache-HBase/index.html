@@ -1,0 +1,204 @@
+
+<!DOCTYPE html>
+<html lang="en" class="loading">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="referrer" content="no-referrer"/>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+    <meta name="viewport" content="width=device-width, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>翻译: How-to: Enable User Authentication and Authorization in Apache HBase - Hexo</title>
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="google" content="notranslate" />
+    <meta name="keywords" content="Fechin,"> 
+    <meta name="description" content="
+原文:  By Matteo Bertozzi
+
+使用默认的Apache HBase配置，每个人都可以读取和写入系统中所有可用的表。对于很多企业机构来说，这种策略是不能接受的。管理员可以设置防火墙,"> 
+    <meta name="author" content="John Doe"> 
+    <link rel="alternative" href="atom.xml" title="Hexo" type="application/atom+xml"> 
+    <link rel="icon" href="/img/favicon.png"> 
+    
+    
+<link rel="stylesheet" href="/css/diaspora.css">
+
+	<script async src="//pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+    <script>
+         (adsbygoogle = window.adsbygoogle || []).push({
+              google_ad_client: "ca-pub-8691406134231910",
+              enable_page_level_ads: true
+         });
+    </script>
+    <script async custom-element="amp-auto-ads"
+        src="https://cdn.ampproject.org/v0/amp-auto-ads-0.1.js">
+    </script>
+<meta name="generator" content="Hexo 5.2.0"></head>
+
+<body class="loading">
+    <span id="config-title" style="display:none">Hexo</span>
+    <div id="loader"></div>
+    <div id="single">
+    <div id="top" style="display: block;">
+    <div class="bar" style="width: 0;"></div>
+    <a class="iconfont icon-home image-icon" href="javascript:;" data-url="http://example.com"></a>
+    <div title="播放/暂停" class="iconfont icon-play"></div>
+    <h3 class="subtitle">翻译: How-to: Enable User Authentication and Authorization in Apache HBase</h3>
+    <div class="social">
+        <div>
+            <div class="share">
+                <a title="获取二维码" class="iconfont icon-scan" href="javascript:;"></a>
+            </div>
+            <div id="qr"></div>
+        </div>
+    </div>
+    <div class="scrollbar"></div>
+</div>
+
+    <div class="section">
+        <div class="article">
+    <div class='main'>
+        <h1 class="title">翻译: How-to: Enable User Authentication and Authorization in Apache HBase</h1>
+        <div class="stuff">
+            <span>十二月 21, 2020</span>
+            
+  <ul class="post-tags-list" itemprop="keywords"><li class="post-tags-list-item"><a class="post-tags-list-link" href="/tags/%E5%A4%A7%E6%95%B0%E6%8D%AE/" rel="tag">大数据</a></li></ul>
+
+
+        </div>
+        <div class="content markdown">
+            <blockquote>
+<p>原文:  By <a target="_blank" rel="noopener" href="https://blog.cloudera.com/author/mbertozzi/" title="Posts by Matteo Bertozzi">Matteo Bertozzi</a></p>
+</blockquote>
+<p>使用默认的Apache HBase配置，每个人都可以读取和写入系统中所有可用的表。对于很多企业机构来说，这种策略是不能接受的。<br>管理员可以设置防火墙来决定哪些机器允许与HBase通信。但是，能够通过防火墙的机器仍然允许读写所有表。这种机制是有效的，但还不够，因为HBase仍然不能区分使用相同客户机的多个用户，而且对于HBase表、列簇或列限定符（column qualifier）访问仍然没有粒度。<br>在这篇文章中，我们将讨论如何将Kerberos与Hadoop和HBase一起使用来提供用户身份验证，以及HBase如何实现用户授权以授予用户对特定数据集的特定操作的权限。</p>
+<h2 id="Secure-HBase-身份验证和授权"><a href="#Secure-HBase-身份验证和授权" class="headerlink" title="Secure HBase:身份验证和授权"></a>Secure HBase:身份验证和授权</h2><p>安全的HBase旨在防止嗅探器、未经身份验证/未经授权的用户和基于网络的攻击。它不能防止意外情况下，有权限的用户删除所有数据。<br>使用<a target="_blank" rel="noopener" href="https://docs.cloudera.com/documentation/enterprise/5-6-x/topics/admin_hbase_security.html">HBase配置</a>能为用户提供身份验证，这确保只有经过授权的用户才能与HBase通信。授权系统是在RPC级别实现的，并且基于简单身份验证和安全层(SASL)，该层支持Kerberos(以及其他身份验证机制)。SASL允许在每个连接的基础上进行身份验证、加密协商和/或消息完整性验证。（“hbase.rpc.protection” 配置属性）。<br>启用用户身份验证后的下一步是让管理员能够定义一系列允许或拒绝特定操作的用户授权规则。授权系统，也称为访问控制器协处理器或访问控制列表(ACL)，从HBase 0.92 (CDH4)开始可用，并提供了为指定用户定义授权策略(读/写/创建/管理)的能力，表/族/限定符粒度。</p>
+<h2 id="Kerberos"><a href="#Kerberos" class="headerlink" title="Kerberos"></a>Kerberos</h2><p><a target="_blank" rel="noopener" href="http://web.mit.edu/kerberos/">Kerberos</a>是一种网络化的身份验证协议。它旨在通过使用秘钥加密为客户机/服务器应用程序提供强大的身份验证。Kerberos协议使用强大的加密技术(AES、3DES、……)，因此客户机可以跨不安全的网络连接向服务器证明自己的身份(反之亦然)。在客户机和服务器使用Kerberos证明其身份之后，它们还可以对所有通信进行加密，以确保在进行业务时的隐私和数据完整性。</p>
+<h4 id="票据交换协议"><a href="#票据交换协议" class="headerlink" title="票据交换协议"></a>票据交换协议</h4><p>在高层次上，要使用Kerberos访问服务，每个客户端必须遵循三个步骤:</p>
+<ul>
+<li>Kerberos身份验证:客户机向Kerberos身份验证服务器验证自身，并接收票据授予票据(TGT)。</li>
+<li>Kerberos授权:客户端从票据授予服务器请求一个服务票据，如果与请求一起发送的客户端TGT有效，则服务器发出票据和会话密钥。</li>
+<li>服务请求:客户端使用服务票据向提供客户端正在使用的服务(如HDFS, HBase，…)交换协议的服务器进行身份验证。</li>
+</ul>
+<h2 id="HBase-HDFS-ZooKeeper-SASL"><a href="#HBase-HDFS-ZooKeeper-SASL" class="headerlink" title="HBase, HDFS, ZooKeeper SASL"></a>HBase, HDFS, ZooKeeper SASL</h2><p>由于HBase依赖于HDFS和ZooKeeper, secure HBase依赖于一个安全的HDFS和一个安全的ZooKeeper。这意味着HBase服务器需要创建一个安全服务会话，如上所述，以与HDFS和ZooKeeper通信。<br>HBase写的所有文件都存储在HDFS中。与Unix文件系统一样，HDFS提供的访问控制是基于用户、组和权限的。由HBase创建的所有文件都有“HBase”作为用户，但这种访问控制是基于系统提供的用户名，每个可以访问机器的人都有可能以用户“HBase”的身份“sudo”。Secure HDFS添加了认证步骤，以保证“hbase”用户是可信的。<br>ZooKeeper在每个znode上都有一个访问控制列表(ACL)， ACL允许基于用户信息以类似于HDFS的方式对用户进行读/写访问。</p>
+<h2 id="HBase-ACL"><a href="#HBase-ACL" class="headerlink" title="HBase ACL"></a>HBase ACL</h2><p>既然我们的用户通过Kerberos进行了身份验证，我们就可以确定收到的用户名是我们信任的用户之一。有时这是不够的粒度-我们想要控制一个指定的用户能够读或写表。为此，HBase提供了一种授权机制，允许对指定的用户进行受限访问。<br>要启用此特性，必须启用<a target="_blank" rel="noopener" href="https://blogs.apache.org/hbase/entry/coprocessor_introduction">Access Controller协处理器</a>，方法是将其添加到主服务器和区域服务器协处理器类下的hbase-site.xml。(请参阅如何<a target="_blank" rel="noopener" href="https://docs.cloudera.com/documentation/enterprise/5-6-x/topics/admin_hbase_security.html">设置HBase安全配置</a>)。<br>协处理器是在每个HBase区域服务器和/或主服务器中运行的代码。它能够拦截大多数操作(put, get, delete，…)，并在操作执行之前和/或之后运行任意代码。<br>使用这种能力在每个操作之前执行一些代码，访问控制器协处理器可以检查用户权限并决定用户是否可以执行操作。<br>HBase shell有一对命令，允许管理员管理用户权限:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">grant [table] [family] [qualifier]</span><br><span class="line">revoke [table] [family] [qualifier]</span><br></pre></td></tr></table></figure>
+<p>如你所见，管理员能够基于表模式限制用户访问:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">给User-W对Table-X&#x2F;Family-Y的读权限(grant &#39;User-W&#39;, &#39;R&#39;, &#39;Table-X&#39;, &#39;Family-Y&#39;)</span><br><span class="line">给User-W对Qualifier-Z操作的读写权限 (grant &#39;User-W&#39;, &#39;RW&#39;, &#39;Table-X&#39;, &#39;Family-Y&#39;, &#39;Qualifier-Z&#39;)</span><br></pre></td></tr></table></figure>
+<p>管理员也有能力授予全局权限，这些权限在集群级别上操作，比如创建表，平衡区域，关闭集群等等:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">给User-W创建表的权限  (grant &#39;User-W&#39;, &#39;C&#39;)</span><br><span class="line">给User-W管理集群的权限 (grant &#39;User-W&#39;, &#39;A&#39;)</span><br></pre></td></tr></table></figure>
+<p>所有权限都存储在访问控制器协处理器创建的表中，称为_acl_。该表的主键是您在grant命令中指定的表名。_acl_表只有一个列族，每个限定符描述特定表/用户的权限粒度。该值包含授予的实际权利。<br>正如您所看到的，HBase shell命令与数据的存储方式紧密相关。grant命令添加或更新一行，revoke命令从_acl_表中删除一行。</p>
+<h4 id="引擎盖下的访问控制器"><a href="#引擎盖下的访问控制器" class="headerlink" title="引擎盖下的访问控制器"></a>引擎盖下的访问控制器</h4><p>如上所述，访问控制器协处理器使用拦截每个用户请求的能力，并检查用户是否有权执行操作。<br>对于每个操作，访问控制器都需要查询_acl_表，以查看用户是否有权执行操作。<br>然而，此操作可能会对性能产生负面影响。解决这个问题的解决方案是使用_acl_表的持久性和ZooKeeper来加快权限查找。每个区域服务器在内存中加载_acl_表，并获得ZkPermissionWatcher的更改通知。通过这种方式，每个区域服务器每次都有更新的值，并且通过使用内存映射执行每个权限检查。</p>
+<h2 id="Roadmap"><a href="#Roadmap" class="headerlink" title="Roadmap"></a>Roadmap</h2><p>虽然Kerberos是一种稳定的、经过良好测试和验证的身份验证系统，但HBase ACL特性仍然非常基本，其语义仍在不断发展。HBASE-6096是伞形JIRA的参考，用于在ACL特性的v2中发布的所有改进。<br>关于授权和访问控制的另一个公开主题是实现每个键值的安全系统(HBASE-6222)，该系统将允许在同一单元中使用与安全标记相关联的不同值。这将允许根据用户的权限显示一条特定的信息。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>HBase Security增加了两个额外的特性，允许您保护数据免受嗅探者或其他网络攻击(通过使用Kerberos对用户进行身份验证和加密服务之间的通信)，并允许您定义用户授权策略、限制操作和限制特定用户的数据可见性。</p>
+<blockquote>
+<p>Matteo Bertozzi is a Software Engineer at Spotify and an HBase Consultant at Cloudera.</p>
+</blockquote>
+
+            <!--[if lt IE 9]><script>document.createElement('audio');</script><![endif]-->
+            <audio id="audio" loop="1" preload="auto" controls="controls" data-autoplay="false">
+                <source type="audio/mpeg" src="">
+            </audio>
+            
+                <ul id="audio-list" style="display:none">
+                    
+                        
+                            <li title='0' data-url='http://link.hhtjim.com/163/425570952.mp3'></li>
+                        
+                    
+                        
+                            <li title='1' data-url='http://link.hhtjim.com/163/425570952.mp3'></li>
+                        
+                    
+                </ul>
+            
+        </div>
+        
+    <div id='gitalk-container' class="comment link"
+		data-enable='false'
+        data-ae='false'
+        data-ci=''
+        data-cs=''
+        data-r=''
+        data-o=''
+        data-a=''
+        data-d='false'
+    >查看评论</div>
+
+
+    </div>
+    
+</div>
+
+
+    </div>
+</div>
+</body>
+
+
+<script src="//lib.baomitu.com/jquery/1.8.3/jquery.min.js"></script>
+<script src="/js/plugin.js"></script>
+<script src="/js/typed.js"></script>
+<script src="/js/diaspora.js"></script>
+
+
+<link rel="stylesheet" href="/photoswipe/photoswipe.css">
+<link rel="stylesheet" href="/photoswipe/default-skin/default-skin.css">
+
+
+<script src="/photoswipe/photoswipe.min.js"></script>
+<script src="/photoswipe/photoswipe-ui-default.min.js"></script>
+
+
+<!-- Root element of PhotoSwipe. Must have class pswp. -->
+<div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
+    <!-- Background of PhotoSwipe. 
+         It's a separate element as animating opacity is faster than rgba(). -->
+    <div class="pswp__bg"></div>
+    <!-- Slides wrapper with overflow:hidden. -->
+    <div class="pswp__scroll-wrap">
+        <!-- Container that holds slides. 
+            PhotoSwipe keeps only 3 of them in the DOM to save memory.
+            Don't modify these 3 pswp__item elements, data is added later on. -->
+        <div class="pswp__container">
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+        </div>
+        <!-- Default (PhotoSwipeUI_Default) interface on top of sliding area. Can be changed. -->
+        <div class="pswp__ui pswp__ui--hidden">
+            <div class="pswp__top-bar">
+                <!--  Controls are self-explanatory. Order can be changed. -->
+                <div class="pswp__counter"></div>
+                <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+                <button class="pswp__button pswp__button--share" title="Share"></button>
+                <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+                <button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button>
+                <!-- Preloader demo http://codepen.io/dimsemenov/pen/yyBWoR -->
+                <!-- element will get class pswp__preloader--active when preloader is running -->
+                <div class="pswp__preloader">
+                    <div class="pswp__preloader__icn">
+                      <div class="pswp__preloader__cut">
+                        <div class="pswp__preloader__donut"></div>
+                      </div>
+                    </div>
+                </div>
+            </div>
+            <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
+                <div class="pswp__share-tooltip"></div> 
+            </div>
+            <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+            </button>
+            <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)">
+            </button>
+            <div class="pswp__caption">
+                <div class="pswp__caption__center"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+
+
+
+</html>
