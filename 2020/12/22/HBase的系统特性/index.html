@@ -1,0 +1,190 @@
+
+<!DOCTYPE html>
+<html lang="en" class="loading">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="referrer" content="no-referrer"/>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+    <meta name="viewport" content="width=device-width, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>HBase的系统特性 - Hexo</title>
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="google" content="notranslate" />
+    <meta name="keywords" content="Fechin,"> 
+    <meta name="description" content="HBase是一种“ NoSQL”数据库。NoSQL数据库的特性往往是不同于传统的RDBMS，所以对于多数NoSQL数据库而言，都有不同的特性，比如用作k-v存储的Redis，或者存储Json类型数据,"> 
+    <meta name="author" content="John Doe"> 
+    <link rel="alternative" href="atom.xml" title="Hexo" type="application/atom+xml"> 
+    <link rel="icon" href="/img/favicon.png"> 
+    
+    
+<link rel="stylesheet" href="/css/diaspora.css">
+
+	<script async src="//pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+    <script>
+         (adsbygoogle = window.adsbygoogle || []).push({
+              google_ad_client: "ca-pub-8691406134231910",
+              enable_page_level_ads: true
+         });
+    </script>
+    <script async custom-element="amp-auto-ads"
+        src="https://cdn.ampproject.org/v0/amp-auto-ads-0.1.js">
+    </script>
+<meta name="generator" content="Hexo 5.2.0"></head>
+
+<body class="loading">
+    <span id="config-title" style="display:none">Hexo</span>
+    <div id="loader"></div>
+    <div id="single">
+    <div id="top" style="display: block;">
+    <div class="bar" style="width: 0;"></div>
+    <a class="iconfont icon-home image-icon" href="javascript:;" data-url="http://example.com"></a>
+    <div title="播放/暂停" class="iconfont icon-play"></div>
+    <h3 class="subtitle">HBase的系统特性</h3>
+    <div class="social">
+        <div>
+            <div class="share">
+                <a title="获取二维码" class="iconfont icon-scan" href="javascript:;"></a>
+            </div>
+            <div id="qr"></div>
+        </div>
+    </div>
+    <div class="scrollbar"></div>
+</div>
+
+    <div class="section">
+        <div class="article">
+    <div class='main'>
+        <h1 class="title">HBase的系统特性</h1>
+        <div class="stuff">
+            <span>十二月 22, 2020</span>
+            
+  <ul class="post-tags-list" itemprop="keywords"><li class="post-tags-list-item"><a class="post-tags-list-link" href="/tags/%E5%A4%A7%E6%95%B0%E6%8D%AE/" rel="tag">大数据</a></li></ul>
+
+
+        </div>
+        <div class="content markdown">
+            <p>HBase是一种“ NoSQL”数据库。NoSQL数据库的特性往往是不同于传统的RDBMS，所以对于多数NoSQL数据库而言，都有不同的特性，比如用作k-v存储的Redis，或者存储Json类型数据的Mongo都被统一称为NoSQL。从功能而言，很大程度上，可以称HBase为一个分布式数据库。 从技术上来看，HBase实际上比“数据库”更像是“数据存储”，因为它缺少RDBMS中的许多功能，例如类型列，二级索引，触发器和高级查询语言等。</p>
+<p>HBbase通过RegionServer来进行扩展，对于RDBMS而言，到达一定数量只能扩展到一个点-特别是单个数据库服务器的大小-为了获得最佳性能，需要专用的硬件和存储设备。HBase通过扩充机器可以线性的增加其存储能力和计算能力。</p>
+<h2 id="HBase的优势"><a href="#HBase的优势" class="headerlink" title="HBase的优势"></a>HBase的优势</h2><ul>
+<li>高度一致的读/写：HBase不是“最终一致”的数据存储。 这使其非常适合诸如高速计数器聚合之类的任务。比如为Spark任务分块计算提供查询。</li>
+<li>自动化处理：HBase表通过区域分布在集群上，并且随着数据的增长，区域会自动拆分和重新分布。自动RegionServer故障转移。</li>
+<li>稀疏性：HBase支持大量稀疏存储，即允许大量列值为空，并不占用任何存储空间。</li>
+<li>扩展性：HBase底层存储依赖HDFS，HDFS可以通过增加DataNode实现扩展。HBase也可以简单的增加RegionServer进行内存和计算性能的扩展，</li>
+<li>块缓存和Bloom过滤器：HBase支持块缓存和Bloom过滤器，以进行大量查询优化。</li>
+<li>生态：HBase支持良好的Java API。并且HBase是Hadoop生态中的核心成员之一，很多生态组件都可以与其直接对接。</li>
+</ul>
+<h2 id="HBase的劣势"><a href="#HBase的劣势" class="headerlink" title="HBase的劣势"></a>HBase的劣势</h2><ul>
+<li>HBase不支持很复杂的聚合运算（如Join、GroupBy等）。（当然这些可以通过表设计方式，或者加入中间表等方式解决）</li>
+<li>HBase并没有实现二级索引功能，所以不支持二级索引查找。</li>
+<li>HBase原生不支持全局跨行事务，只支持单行事务模型。</li>
+</ul>
+
+            <!--[if lt IE 9]><script>document.createElement('audio');</script><![endif]-->
+            <audio id="audio" loop="1" preload="auto" controls="controls" data-autoplay="false">
+                <source type="audio/mpeg" src="">
+            </audio>
+            
+                <ul id="audio-list" style="display:none">
+                    
+                        
+                            <li title='0' data-url='http://link.hhtjim.com/163/425570952.mp3'></li>
+                        
+                    
+                        
+                            <li title='1' data-url='http://link.hhtjim.com/163/425570952.mp3'></li>
+                        
+                    
+                </ul>
+            
+        </div>
+        
+    <div id='gitalk-container' class="comment link"
+		data-enable='false'
+        data-ae='false'
+        data-ci=''
+        data-cs=''
+        data-r=''
+        data-o=''
+        data-a=''
+        data-d='false'
+    >查看评论</div>
+
+
+    </div>
+    
+</div>
+
+
+    </div>
+</div>
+</body>
+
+
+<script src="//lib.baomitu.com/jquery/1.8.3/jquery.min.js"></script>
+<script src="/js/plugin.js"></script>
+<script src="/js/typed.js"></script>
+<script src="/js/diaspora.js"></script>
+
+
+<link rel="stylesheet" href="/photoswipe/photoswipe.css">
+<link rel="stylesheet" href="/photoswipe/default-skin/default-skin.css">
+
+
+<script src="/photoswipe/photoswipe.min.js"></script>
+<script src="/photoswipe/photoswipe-ui-default.min.js"></script>
+
+
+<!-- Root element of PhotoSwipe. Must have class pswp. -->
+<div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
+    <!-- Background of PhotoSwipe. 
+         It's a separate element as animating opacity is faster than rgba(). -->
+    <div class="pswp__bg"></div>
+    <!-- Slides wrapper with overflow:hidden. -->
+    <div class="pswp__scroll-wrap">
+        <!-- Container that holds slides. 
+            PhotoSwipe keeps only 3 of them in the DOM to save memory.
+            Don't modify these 3 pswp__item elements, data is added later on. -->
+        <div class="pswp__container">
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+        </div>
+        <!-- Default (PhotoSwipeUI_Default) interface on top of sliding area. Can be changed. -->
+        <div class="pswp__ui pswp__ui--hidden">
+            <div class="pswp__top-bar">
+                <!--  Controls are self-explanatory. Order can be changed. -->
+                <div class="pswp__counter"></div>
+                <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+                <button class="pswp__button pswp__button--share" title="Share"></button>
+                <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+                <button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button>
+                <!-- Preloader demo http://codepen.io/dimsemenov/pen/yyBWoR -->
+                <!-- element will get class pswp__preloader--active when preloader is running -->
+                <div class="pswp__preloader">
+                    <div class="pswp__preloader__icn">
+                      <div class="pswp__preloader__cut">
+                        <div class="pswp__preloader__donut"></div>
+                      </div>
+                    </div>
+                </div>
+            </div>
+            <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
+                <div class="pswp__share-tooltip"></div> 
+            </div>
+            <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+            </button>
+            <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)">
+            </button>
+            <div class="pswp__caption">
+                <div class="pswp__caption__center"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+
+
+
+</html>
