@@ -1,0 +1,208 @@
+
+<!DOCTYPE html>
+<html lang="en" class="loading">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="referrer" content="no-referrer"/>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+    <meta name="viewport" content="width=device-width, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>HBase的体系结构 - Hexo</title>
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="google" content="notranslate" />
+    <meta name="keywords" content="Fechin,"> 
+    <meta name="description" content="HBase的体系结构属于典型的Master-Slave模型。它的数据存储在HDFS上，ZooKeeper被使用协助管理HBase。我们可以用一张图来纵览HBase的整个体系结构。
+Client在连接,"> 
+    <meta name="author" content="John Doe"> 
+    <link rel="alternative" href="atom.xml" title="Hexo" type="application/atom+xml"> 
+    <link rel="icon" href="/img/favicon.png"> 
+    
+    
+<link rel="stylesheet" href="/css/diaspora.css">
+
+	<script async src="//pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+    <script>
+         (adsbygoogle = window.adsbygoogle || []).push({
+              google_ad_client: "ca-pub-8691406134231910",
+              enable_page_level_ads: true
+         });
+    </script>
+    <script async custom-element="amp-auto-ads"
+        src="https://cdn.ampproject.org/v0/amp-auto-ads-0.1.js">
+    </script>
+<meta name="generator" content="Hexo 5.2.0"></head>
+
+<body class="loading">
+    <span id="config-title" style="display:none">Hexo</span>
+    <div id="loader"></div>
+    <div id="single">
+    <div id="top" style="display: block;">
+    <div class="bar" style="width: 0;"></div>
+    <a class="iconfont icon-home image-icon" href="javascript:;" data-url="http://example.com"></a>
+    <div title="播放/暂停" class="iconfont icon-play"></div>
+    <h3 class="subtitle">HBase的体系结构</h3>
+    <div class="social">
+        <div>
+            <div class="share">
+                <a title="获取二维码" class="iconfont icon-scan" href="javascript:;"></a>
+            </div>
+            <div id="qr"></div>
+        </div>
+    </div>
+    <div class="scrollbar"></div>
+</div>
+
+    <div class="section">
+        <div class="article">
+    <div class='main'>
+        <h1 class="title">HBase的体系结构</h1>
+        <div class="stuff">
+            <span>十二月 23, 2020</span>
+            
+  <ul class="post-tags-list" itemprop="keywords"><li class="post-tags-list-item"><a class="post-tags-list-link" href="/tags/%E5%A4%A7%E6%95%B0%E6%8D%AE/" rel="tag">大数据</a></li></ul>
+
+
+        </div>
+        <div class="content markdown">
+            <p>HBase的体系结构属于典型的Master-Slave模型。它的数据存储在HDFS上，ZooKeeper被使用协助管理HBase。<br>我们可以用一张图来纵览HBase的整个体系结构。<br><img src="https://upload-images.jianshu.io/upload_images/4926805-6fb8b75804b05d68.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="HBase体系结构"></p>
+<h2 id="Client"><a href="#Client" class="headerlink" title="Client"></a>Client</h2><p>在连接方式上，HBase客户端会通过查询<code>hbase：meta</code>去找相关存活的RegionServer。找到相关的region后，客户端会直接和对应的regionServer连接而并不会再去通过master节点请求。 <code>hbase:meta</code>中的信息会被缓存在客户端中，除非集群有region分裂或者blance之类的调整，HBase会重新拉去<code>hbase:meta</code>中的信息。</p>
+<p>在HBase2.0后，连接API改为Connection。（HTablePool在HBase 0.94、0.95和0.96中已弃用，并在0.98.1中由HBASE-6580或HConnection删除，而HConnection在HBase 1.0中已由Connection弃用。 ）BufferedMutator， <a target="_blank" rel="noopener" href="https://hbase.apache.org/devapidocs/org/apache/hadoop/hbase/client/HTable.html">HTable</a>已被标为<code>deprecated</code>。</p>
+<h2 id="Zookeeper"><a href="#Zookeeper" class="headerlink" title="Zookeeper"></a>Zookeeper</h2><p>zookeeper在HBase的集群管理中扮演着非常重要的角色。</p>
+<ul>
+<li>高可用：当Zookeeper通过心跳检测到有宕机节点。可以通过选举新的master节点，保证高可用。</li>
+<li>元数据：保存集群信息的元数据。</li>
+<li>一致性： Zookeeper可以通过加表锁，保证HBase表数据的一致性。<h2 id="Master"><a href="#Master" class="headerlink" title="Master"></a>Master</h2>主服务器负责监视群集中的所有RegionServer实例，并且是所有元数据更改的接口。 在分布式群集中，主服务器通常在NameNode上运行。具体细节<a target="_blank" rel="noopener" href="http://blog.zahoor.in/2012/08/hbase-hmaster-architecture/">HBaseMaster参考这篇文章</a>。</li>
+</ul>
+<p>提供了一些面向元数据的结构的接口</p>
+<ul>
+<li>表（createTable，modifyTable，removeTable，启用，禁用）</li>
+<li>ColumnFamily（addColumn，modifyColumn，removeColumn）</li>
+<li>region(move, assign, unassign) （例如，当调用Admin方法disableTable时，它由主服务器提供服务。</li>
+</ul>
+<p>另外Master节点提供了定期检查并清理<code>hbase:meta</code>。检查HDFS中HLog是否过期、HFile是否已经被删除，并在过期之后将其删除。</p>
+<h2 id="RegionServer"><a href="#RegionServer" class="headerlink" title="RegionServer"></a>RegionServer</h2><p>它负责服务和管理区域。 在分布式群集中，RegionServer在DataNode上运行，它由WAL(HLog)、BlockCache以及多个Region构成。</p>
+<ul>
+<li><p>Region：数据表的一个分区。它存储rowkey按照散列区分的从startkey-endkey的数据。通常一个region设计为10G到50G。当数据表大小超过这个值就会自动分裂为两个Region。Region是集群负载均衡的基本单位。通常一张表的Region会分布在整个集群的多台RegionServer上，一个RegionServer上会管理多个Region，当然，这些Region一般来自不同的数据表。<br>它的基本结构如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">Table                    (HBase table)</span><br><span class="line">    Region               (Regions for the table)</span><br><span class="line">        Store            (Store per ColumnFamily for each Region for the table)</span><br><span class="line">            MemStore     (MemStore for each Store for each Region for the table)</span><br><span class="line">            StoreFile    (StoreFiles for each Store for each Region for the table)</span><br><span class="line">                Block    (Blocks within a StoreFile within a Store for each Region for the table)</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>HLog：HBase数据随机写入时，并非直接写入HFile数据文件，而是先写入缓存，再异步刷新落盘。为了防止缓存数据丢失，数据写入缓存之前需要首先顺序写入HLog，这样，即使缓存数据丢失，仍然可以通过HLog日志恢复；其二，用于实现HBase集群间主从复制，通过回放主集群推送过来的HLog日志实现主从复制。</p>
+</li>
+<li><p>BlockCache：HBase的都缓存。HBase提供了两种不同的BlockCache实现来缓存从HDFS读取的数据：默认的堆上LruBlockCache和BucketCache（通常是堆外）。</p>
+</li>
+<li><p>Store： 多个Store构成1个region，Store的个数取决于表中列簇（columnfamily）的个数，多少个列簇就有多少个Store。每个Store由一个MemStore和一个或多个HFile组成。</p>
+</li>
+<li><p>MemStore： MemStore是HBase的写缓存。默认为128M，当超过这个值，数据就会被异步地将数据持久化到HFile中。</p>
+</li>
+</ul>
+<h2 id="HDFS"><a href="#HDFS" class="headerlink" title="HDFS"></a>HDFS</h2><p>由于HBase在HDFS上运行（并且每个StoreFile都作为文件写在HDFS上），因此重要的是了解HDFS体系结构，尤其是在如何存储文件，处理故障转移和复制块方面。<br>HDFS具有主/从体系结构。 HDFS群集由单个NameNode和管理文件系统名称空间并控制客户端对文件的访问的主服务器组成。 此外，还有许多数据节点，通常是集群中每个节点一个，用于管理与它们所运行的节点相连的存储。 HDFS公开了文件系统名称空间，并允许用户数据存储在文件中。 在内部，文件被分成一个或多个块，这些块存储在一组DataNode中。 NameNode执行文件系统名称空间操作，例如打开，关闭和重命名文件和目录。 它还确定块到DataNode的映射。 DataNode负责处理来自文件系统客户端的读写请求。 DataNode还根据NameNode的指令执行块创建，删除和复制。<br><img src="https://upload-images.jianshu.io/upload_images/4926805-776256e3043da67a.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="HDFS架构"></p>
+<p>细节可以参考<a target="_blank" rel="noopener" href="https://hadoop.apache.org/docs/current/hadoop-project-dist/hadoop-hdfs/HdfsDesign.html">这篇文档</a>。</p>
+
+            <!--[if lt IE 9]><script>document.createElement('audio');</script><![endif]-->
+            <audio id="audio" loop="1" preload="auto" controls="controls" data-autoplay="false">
+                <source type="audio/mpeg" src="">
+            </audio>
+            
+                <ul id="audio-list" style="display:none">
+                    
+                        
+                            <li title='0' data-url='http://link.hhtjim.com/163/425570952.mp3'></li>
+                        
+                    
+                        
+                            <li title='1' data-url='http://link.hhtjim.com/163/425570952.mp3'></li>
+                        
+                    
+                </ul>
+            
+        </div>
+        
+    <div id='gitalk-container' class="comment link"
+		data-enable='false'
+        data-ae='false'
+        data-ci=''
+        data-cs=''
+        data-r=''
+        data-o=''
+        data-a=''
+        data-d='false'
+    >查看评论</div>
+
+
+    </div>
+    
+</div>
+
+
+    </div>
+</div>
+</body>
+
+
+<script src="//lib.baomitu.com/jquery/1.8.3/jquery.min.js"></script>
+<script src="/js/plugin.js"></script>
+<script src="/js/typed.js"></script>
+<script src="/js/diaspora.js"></script>
+
+
+<link rel="stylesheet" href="/photoswipe/photoswipe.css">
+<link rel="stylesheet" href="/photoswipe/default-skin/default-skin.css">
+
+
+<script src="/photoswipe/photoswipe.min.js"></script>
+<script src="/photoswipe/photoswipe-ui-default.min.js"></script>
+
+
+<!-- Root element of PhotoSwipe. Must have class pswp. -->
+<div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
+    <!-- Background of PhotoSwipe. 
+         It's a separate element as animating opacity is faster than rgba(). -->
+    <div class="pswp__bg"></div>
+    <!-- Slides wrapper with overflow:hidden. -->
+    <div class="pswp__scroll-wrap">
+        <!-- Container that holds slides. 
+            PhotoSwipe keeps only 3 of them in the DOM to save memory.
+            Don't modify these 3 pswp__item elements, data is added later on. -->
+        <div class="pswp__container">
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+        </div>
+        <!-- Default (PhotoSwipeUI_Default) interface on top of sliding area. Can be changed. -->
+        <div class="pswp__ui pswp__ui--hidden">
+            <div class="pswp__top-bar">
+                <!--  Controls are self-explanatory. Order can be changed. -->
+                <div class="pswp__counter"></div>
+                <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+                <button class="pswp__button pswp__button--share" title="Share"></button>
+                <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+                <button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button>
+                <!-- Preloader demo http://codepen.io/dimsemenov/pen/yyBWoR -->
+                <!-- element will get class pswp__preloader--active when preloader is running -->
+                <div class="pswp__preloader">
+                    <div class="pswp__preloader__icn">
+                      <div class="pswp__preloader__cut">
+                        <div class="pswp__preloader__donut"></div>
+                      </div>
+                    </div>
+                </div>
+            </div>
+            <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
+                <div class="pswp__share-tooltip"></div> 
+            </div>
+            <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+            </button>
+            <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)">
+            </button>
+            <div class="pswp__caption">
+                <div class="pswp__caption__center"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+
+
+
+</html>
