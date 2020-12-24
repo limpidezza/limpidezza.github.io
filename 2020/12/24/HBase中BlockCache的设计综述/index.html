@@ -1,0 +1,190 @@
+
+<!DOCTYPE html>
+<html lang="en" class="loading">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="referrer" content="no-referrer"/>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+    <meta name="viewport" content="width=device-width, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>HBase中BlockCache的设计综述 - Hexo</title>
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="google" content="notranslate" />
+    <meta name="keywords" content="Fechin,"> 
+    <meta name="description" content="BlockCache用来做读缓存，在每个RegionServer上只有一个BlockCache。BlockCache的默认值为0.4，它表示可用堆的40％。HBase提供了两种不同的BlockCac,"> 
+    <meta name="author" content="John Doe"> 
+    <link rel="alternative" href="atom.xml" title="Hexo" type="application/atom+xml"> 
+    <link rel="icon" href="/img/favicon.png"> 
+    
+    
+<link rel="stylesheet" href="/css/diaspora.css">
+
+	<script async src="//pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+    <script>
+         (adsbygoogle = window.adsbygoogle || []).push({
+              google_ad_client: "ca-pub-8691406134231910",
+              enable_page_level_ads: true
+         });
+    </script>
+    <script async custom-element="amp-auto-ads"
+        src="https://cdn.ampproject.org/v0/amp-auto-ads-0.1.js">
+    </script>
+<meta name="generator" content="Hexo 5.2.0"></head>
+
+<body class="loading">
+    <span id="config-title" style="display:none">Hexo</span>
+    <div id="loader"></div>
+    <div id="single">
+    <div id="top" style="display: block;">
+    <div class="bar" style="width: 0;"></div>
+    <a class="iconfont icon-home image-icon" href="javascript:;" data-url="http://example.com"></a>
+    <div title="播放/暂停" class="iconfont icon-play"></div>
+    <h3 class="subtitle">HBase中BlockCache的设计综述</h3>
+    <div class="social">
+        <div>
+            <div class="share">
+                <a title="获取二维码" class="iconfont icon-scan" href="javascript:;"></a>
+            </div>
+            <div id="qr"></div>
+        </div>
+    </div>
+    <div class="scrollbar"></div>
+</div>
+
+    <div class="section">
+        <div class="article">
+    <div class='main'>
+        <h1 class="title">HBase中BlockCache的设计综述</h1>
+        <div class="stuff">
+            <span>十二月 24, 2020</span>
+            
+  <ul class="post-tags-list" itemprop="keywords"><li class="post-tags-list-item"><a class="post-tags-list-link" href="/tags/%E5%A4%A7%E6%95%B0%E6%8D%AE/" rel="tag">大数据</a></li></ul>
+
+
+        </div>
+        <div class="content markdown">
+            <p>BlockCache用来做读缓存，在每个RegionServer上只有一个BlockCache。BlockCache的默认值为0.4，它表示可用堆的40％。HBase提供了两种不同的BlockCache实现来缓存从HDFS读取的数据：默认的堆上LruBlockCache和通常是堆外的BucketCache。<br>默认情况下，所有用户表都启用块缓存，这意味着任何读取操作都将加载LRU缓存。 这对于许多用例而言可能是好的，但是通常需要进行进一步的调整才能获得更好的性能。 一个重要的概念是工作集大小或WSS，即：“计算任务所需的内存量”。 </p>
+<h4 id="BlockCache的分配"><a href="#BlockCache的分配" class="headerlink" title="BlockCache的分配"></a>BlockCache的分配</h4><ul>
+<li>一台将堆大小设置为1 GB并且默认块高速缓存大小的区域服务器将具有405 MB的块高速缓存可用。</li>
+<li>20个区域服务器（堆大小设置为8 GB）和默认块高速缓存大小将具有63.3的块高速缓存。</li>
+<li>堆大小设置为24 GB，块缓存大小为0.5的100个区域服务器将具有约1.16 TB的块缓存。<h4 id="LruBlockCache"><a href="#LruBlockCache" class="headerlink" title="LruBlockCache"></a>LruBlockCache</h4>使用Java实现，并且完全在Java堆中。LruBlockCache的实现原理可以参照Java并发包的ConcurrentHashMap，管理BlockKey到Block的映射关系。LruBlockCache遵循LRU的淘汰策略。</li>
+</ul>
+<p>LRUBlockCache提供了三中缓存策略。</p>
+<ul>
+<li>单一访问优先级：占读缓存的25%，首次从HDFS加载块时，数据将被存在这块区域，它属于三种策略中优先级最低的。<br>多路访问优先级：占读缓存的50%，如果再次访问先前优先级组中的块，则它将升级到该区域。<br>内存中访问优先级：占读缓存的25%，如果该块的系列被配置为“内存中”，则无论其访问次数如何，它都将存储在此块区域，一般用来存储元数据信息和量小的数据。<br>标记一个列簇为内存中访问优先级<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">HColumnDescriptor.setInMemory(true);</span><br></pre></td></tr></table></figure>
+LRUBlockCache缺点是当在缓存中的数据过长时间后，会被Java虚拟机从年轻代晋升到老年代，如果选择是CMS虚拟机，将造成FullGC STW（stop-the-world）。<h4 id="BucketCache"><a href="#BucketCache" class="headerlink" title="BucketCache"></a>BucketCache</h4>BucketCache也叫做Off-heap Block Cache，BucketCache属于堆外缓存，它没有使用JVM内存管理算法来管理缓存，而是自己对内存进行管理，以此来避免出现FullGC的问题，因为BucketCache设计较为复杂，这里不再展开说明，具体细节参照<a target="_blank" rel="noopener" href="https://hbase.apache.org/2.2/book.html#regionserver.arch">官方文档</a>。</li>
+</ul>
+<p>一般来说HBase将BucketCache和LRUBlockCache搭配使用，称为CombinedBlock-Cache。和DoubleBlockCache不同，系统在LRUBlockCache中主要存储Index Block和Bloom Block，而将Data Block存储在BucketCache中。因此一次随机读需要先在LRUBlockCache中查到对应的Index Block，然后再到BucketCache查找对应Data Block。</p>
+<h4 id="压缩BlockCache"><a href="#压缩BlockCache" class="headerlink" title="压缩BlockCache"></a>压缩BlockCache</h4><p><code>HBASE-11331</code>引入了惰性BlockCache解压缩，简称为compressed BlockCache。 启用压缩的BlockCache后，数据和编码的数据块将以其磁盘上的格式缓存在BlockCache中，而不是在缓存之前进行解压缩和解密。</p>
+<p>对于承载超出缓存容量的更多数据的RegionServer，已证明通过SNAPPY压缩启用此功能可将吞吐量提高50％，平均延迟提高30％，同时将垃圾收集增加80％，并将总CPU负载增加2％。 有关如何衡量和实现性能的更多详细信息，请参见<code>HBASE-11331</code>。 如果BlockCache内存比较充足或者当前的数据任务对于CPU和垃圾负载是相当敏感的，压缩BlockCache可能并不是很适合。</p>
+<p>默认情况下，压缩的BlockCache是​​禁用的。 要启用它，在所有RegionServer上的hbase-site.xml中将hbase.block.data.cachecompressed设置为true。</p>
+
+            <!--[if lt IE 9]><script>document.createElement('audio');</script><![endif]-->
+            <audio id="audio" loop="1" preload="auto" controls="controls" data-autoplay="false">
+                <source type="audio/mpeg" src="">
+            </audio>
+            
+                <ul id="audio-list" style="display:none">
+                    
+                        
+                            <li title='0' data-url='http://link.hhtjim.com/163/425570952.mp3'></li>
+                        
+                    
+                        
+                            <li title='1' data-url='http://link.hhtjim.com/163/425570952.mp3'></li>
+                        
+                    
+                </ul>
+            
+        </div>
+        
+    <div id='gitalk-container' class="comment link"
+		data-enable='false'
+        data-ae='false'
+        data-ci=''
+        data-cs=''
+        data-r=''
+        data-o=''
+        data-a=''
+        data-d='false'
+    >查看评论</div>
+
+
+    </div>
+    
+</div>
+
+
+    </div>
+</div>
+</body>
+
+
+<script src="//lib.baomitu.com/jquery/1.8.3/jquery.min.js"></script>
+<script src="/js/plugin.js"></script>
+<script src="/js/typed.js"></script>
+<script src="/js/diaspora.js"></script>
+
+
+<link rel="stylesheet" href="/photoswipe/photoswipe.css">
+<link rel="stylesheet" href="/photoswipe/default-skin/default-skin.css">
+
+
+<script src="/photoswipe/photoswipe.min.js"></script>
+<script src="/photoswipe/photoswipe-ui-default.min.js"></script>
+
+
+<!-- Root element of PhotoSwipe. Must have class pswp. -->
+<div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
+    <!-- Background of PhotoSwipe. 
+         It's a separate element as animating opacity is faster than rgba(). -->
+    <div class="pswp__bg"></div>
+    <!-- Slides wrapper with overflow:hidden. -->
+    <div class="pswp__scroll-wrap">
+        <!-- Container that holds slides. 
+            PhotoSwipe keeps only 3 of them in the DOM to save memory.
+            Don't modify these 3 pswp__item elements, data is added later on. -->
+        <div class="pswp__container">
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+        </div>
+        <!-- Default (PhotoSwipeUI_Default) interface on top of sliding area. Can be changed. -->
+        <div class="pswp__ui pswp__ui--hidden">
+            <div class="pswp__top-bar">
+                <!--  Controls are self-explanatory. Order can be changed. -->
+                <div class="pswp__counter"></div>
+                <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+                <button class="pswp__button pswp__button--share" title="Share"></button>
+                <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+                <button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button>
+                <!-- Preloader demo http://codepen.io/dimsemenov/pen/yyBWoR -->
+                <!-- element will get class pswp__preloader--active when preloader is running -->
+                <div class="pswp__preloader">
+                    <div class="pswp__preloader__icn">
+                      <div class="pswp__preloader__cut">
+                        <div class="pswp__preloader__donut"></div>
+                      </div>
+                    </div>
+                </div>
+            </div>
+            <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
+                <div class="pswp__share-tooltip"></div> 
+            </div>
+            <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+            </button>
+            <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)">
+            </button>
+            <div class="pswp__caption">
+                <div class="pswp__caption__center"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+
+
+
+</html>
