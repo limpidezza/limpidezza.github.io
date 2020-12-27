@@ -1,0 +1,200 @@
+
+<!DOCTYPE html>
+<html lang="en" class="loading">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="referrer" content="no-referrer"/>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+    <meta name="viewport" content="width=device-width, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>HBase写入基本概念 - Hexo</title>
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="google" content="notranslate" />
+    <meta name="keywords" content="Fechin,"> 
+    <meta name="description" content="在HBase写入的过程中，要从client和server端两部分来看。在client端，会将写入的数据添加到本地缓冲区中，符合一定条件就会通过AsyncProcess异步批量提交。然后会去查找met,"> 
+    <meta name="author" content="John Doe"> 
+    <link rel="alternative" href="atom.xml" title="Hexo" type="application/atom+xml"> 
+    <link rel="icon" href="/img/favicon.png"> 
+    
+    
+<link rel="stylesheet" href="/css/diaspora.css">
+
+	<script async src="//pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+    <script>
+         (adsbygoogle = window.adsbygoogle || []).push({
+              google_ad_client: "ca-pub-8691406134231910",
+              enable_page_level_ads: true
+         });
+    </script>
+    <script async custom-element="amp-auto-ads"
+        src="https://cdn.ampproject.org/v0/amp-auto-ads-0.1.js">
+    </script>
+<meta name="generator" content="Hexo 5.2.0"></head>
+
+<body class="loading">
+    <span id="config-title" style="display:none">Hexo</span>
+    <div id="loader"></div>
+    <div id="single">
+    <div id="top" style="display: block;">
+    <div class="bar" style="width: 0;"></div>
+    <a class="iconfont icon-home image-icon" href="javascript:;" data-url="http://example.com"></a>
+    <div title="播放/暂停" class="iconfont icon-play"></div>
+    <h3 class="subtitle">HBase写入基本概念</h3>
+    <div class="social">
+        <div>
+            <div class="share">
+                <a title="获取二维码" class="iconfont icon-scan" href="javascript:;"></a>
+            </div>
+            <div id="qr"></div>
+        </div>
+    </div>
+    <div class="scrollbar"></div>
+</div>
+
+    <div class="section">
+        <div class="article">
+    <div class='main'>
+        <h1 class="title">HBase写入基本概念</h1>
+        <div class="stuff">
+            <span>十二月 27, 2020</span>
+            
+  <ul class="post-tags-list" itemprop="keywords"><li class="post-tags-list-item"><a class="post-tags-list-link" href="/tags/%E5%A4%A7%E6%95%B0%E6%8D%AE/" rel="tag">大数据</a></li></ul>
+
+
+        </div>
+        <div class="content markdown">
+            <p>在HBase写入的过程中，要从client和server端两部分来看。<br>在client端，会将写入的数据添加到本地缓冲区中，符合一定条件就会通过AsyncProcess异步批量提交。然后会去查找meta表，根据rowkey查找到对应的region信息，直接连接到对应的regionServer，进行写操作。<br>在regionServer端，为了保证写入数据在异常情况下不丢数据以及保证写入速度。分别引入了HLog和MemStore。HLog的主要作用是在机器或者HBase数据异常情况下进行数据恢复的。MemStore是为数据提供了一块内存存储，当这块存储达到一定的阈值，就把数据flush到HFile中进行持久化存储。以下会分别介绍HLog和MemStore是如何工作的。</p>
+<h2 id="HLog"><a href="#HLog" class="headerlink" title="HLog"></a>HLog</h2><p>在写操作的时候，client的数据会先同步到HLog，之后才会写入Memstore中，当此时HBase发生异常，MemStore中的数据会丢失，这时候会从HLog中加载数据进行恢复操作。<br>每个RegionServer拥有一个或多个HLog。存储在/hbase/WALs文件夹下。在2.0之后，可以通过<code>WALPrettyPrinter</code>进行HLog内容的打印。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"> $ .&#x2F;bin&#x2F;hbase wal</span><br><span class="line">hdfs:&#x2F;&#x2F;example.org:8020&#x2F;hbase&#x2F;WALs&#x2F;example.org,60020,1283516293161&#x2F;10.10.21.10%3A60020.1283973724012</span><br></pre></td></tr></table></figure>
+<p>在之前的版本可以使用</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ .&#x2F;bin&#x2F;hbase hlog hdfs:&#x2F;&#x2F;example.org:8020&#x2F;hbase&#x2F;.logs&#x2F;example.org,60020,1283516293161&#x2F;10.10.21.10%3A60020.1283973724012</span><br></pre></td></tr></table></figure>
+<h4 id="生命周期"><a href="#生命周期" class="headerlink" title="生命周期"></a>生命周期</h4><p>一旦对数据进行修改，插入，删除等操作的时候，这些操作都会先写入HLog中。对于HLog中数据的管理有四个阶段。</p>
+<ul>
+<li>把来自client的数据直接同步写入到HLog文件中。</li>
+<li>按照配置<code>hbase.regionserver. logroll.period</code>定时去新建一个新的HLog文件接受新的请求。</li>
+<li>一旦数据在HFile中落盘就把HLog中的数据标记为过期。如果日志中所有日志记录已经落盘，则可以认为该日志文件失效。同时移到oldWALs文件夹。</li>
+<li>根据配置<code>hbase.master.cleaner. interval&#39;</code>定时删除过期日志文件。</li>
+</ul>
+<h2 id="MemStore"><a href="#MemStore" class="headerlink" title="MemStore"></a>MemStore</h2><p>对于MemStore，在写操作之间做缓存主要有以下好处：</p>
+<ul>
+<li>可以减少flush的次数。</li>
+<li>当此时有读操作可以直接从内存操作。</li>
+<li>HFile中KeyValue数据需要按照Key排序，在MemStore中可以执行这个排序过程。</li>
+</ul>
+<h4 id="内部结构"><a href="#内部结构" class="headerlink" title="内部结构"></a>内部结构</h4><p>HBase采用了跳跃表的数据结构，在Java实现中，直接使用了JDK的ConcurrentSkipListMap。可以保证线程安全的读写操作。</p>
+<h4 id="基本操作"><a href="#基本操作" class="headerlink" title="基本操作"></a>基本操作</h4><ul>
+<li>检查当前可用的Chunk是否写满，如果写满，重新申请一个2M的Chunk。（关于Chunk和ChunkPool参见<a target="_blank" rel="noopener" href="https://issues.apache.org/jira/browse/HBASE-8163">HBASE-8163</a>）</li>
+<li>将当前KeyValue在内存中重新构建，在可用Chunk的指定offset处申请内存创建一个新的KeyValue对象。</li>
+<li>将新创建的KeyValue对象写入ConcurrentSkipListMap中。</li>
+</ul>
+<h2 id="HFile"><a href="#HFile" class="headerlink" title="HFile"></a>HFile</h2><p>HFile的逻辑结构图如下：<br><img src="https://upload-images.jianshu.io/upload_images/4926805-50b0dc15198e4558.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="HFile V2逻辑结构图"><br>HFile依次由Scanned Block、Non-scanned Block、Load-on-open以及Trailer四个部分组成。<br>MemStore中KV在flush成HFile时首先构建Scanned Block部分，即KV写进来之后先构建Data Block并依次写入文件，在形成Data Block的过程中也会依次构建形成Leaf index Block、Bloom Block并依次写入文件。一旦MemStore中所有KV都写入完成，Scanned Block部分就构建完成。Non-scanned Block、Load-on-open以及Trailer这三部分是在所有KV数据完成写入后再追加写入的。</p>
+
+            <!--[if lt IE 9]><script>document.createElement('audio');</script><![endif]-->
+            <audio id="audio" loop="1" preload="auto" controls="controls" data-autoplay="false">
+                <source type="audio/mpeg" src="">
+            </audio>
+            
+                <ul id="audio-list" style="display:none">
+                    
+                        
+                            <li title='0' data-url='http://link.hhtjim.com/163/425570952.mp3'></li>
+                        
+                    
+                        
+                            <li title='1' data-url='http://link.hhtjim.com/163/425570952.mp3'></li>
+                        
+                    
+                </ul>
+            
+        </div>
+        
+    <div id='gitalk-container' class="comment link"
+		data-enable='false'
+        data-ae='false'
+        data-ci=''
+        data-cs=''
+        data-r=''
+        data-o=''
+        data-a=''
+        data-d='false'
+    >查看评论</div>
+
+
+    </div>
+    
+</div>
+
+
+    </div>
+</div>
+</body>
+
+
+<script src="//lib.baomitu.com/jquery/1.8.3/jquery.min.js"></script>
+<script src="/js/plugin.js"></script>
+<script src="/js/typed.js"></script>
+<script src="/js/diaspora.js"></script>
+
+
+<link rel="stylesheet" href="/photoswipe/photoswipe.css">
+<link rel="stylesheet" href="/photoswipe/default-skin/default-skin.css">
+
+
+<script src="/photoswipe/photoswipe.min.js"></script>
+<script src="/photoswipe/photoswipe-ui-default.min.js"></script>
+
+
+<!-- Root element of PhotoSwipe. Must have class pswp. -->
+<div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
+    <!-- Background of PhotoSwipe. 
+         It's a separate element as animating opacity is faster than rgba(). -->
+    <div class="pswp__bg"></div>
+    <!-- Slides wrapper with overflow:hidden. -->
+    <div class="pswp__scroll-wrap">
+        <!-- Container that holds slides. 
+            PhotoSwipe keeps only 3 of them in the DOM to save memory.
+            Don't modify these 3 pswp__item elements, data is added later on. -->
+        <div class="pswp__container">
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+        </div>
+        <!-- Default (PhotoSwipeUI_Default) interface on top of sliding area. Can be changed. -->
+        <div class="pswp__ui pswp__ui--hidden">
+            <div class="pswp__top-bar">
+                <!--  Controls are self-explanatory. Order can be changed. -->
+                <div class="pswp__counter"></div>
+                <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+                <button class="pswp__button pswp__button--share" title="Share"></button>
+                <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+                <button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button>
+                <!-- Preloader demo http://codepen.io/dimsemenov/pen/yyBWoR -->
+                <!-- element will get class pswp__preloader--active when preloader is running -->
+                <div class="pswp__preloader">
+                    <div class="pswp__preloader__icn">
+                      <div class="pswp__preloader__cut">
+                        <div class="pswp__preloader__donut"></div>
+                      </div>
+                    </div>
+                </div>
+            </div>
+            <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
+                <div class="pswp__share-tooltip"></div> 
+            </div>
+            <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+            </button>
+            <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)">
+            </button>
+            <div class="pswp__caption">
+                <div class="pswp__caption__center"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+
+
+
+</html>
