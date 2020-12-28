@@ -1,0 +1,212 @@
+
+<!DOCTYPE html>
+<html lang="en" class="loading">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="referrer" content="no-referrer"/>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+    <meta name="viewport" content="width=device-width, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>HBase写性能优化 - Hexo</title>
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="google" content="notranslate" />
+    <meta name="keywords" content="Fechin,"> 
+    <meta name="description" content="HBase服务器端优化
+Region是否太少？
+
+优化原理：当前集群中表的Region个数如果小于RegionServer个数，即Num(Region of Table) &amp;lt; Num (Reg,"> 
+    <meta name="author" content="John Doe"> 
+    <link rel="alternative" href="atom.xml" title="Hexo" type="application/atom+xml"> 
+    <link rel="icon" href="/img/favicon.png"> 
+    
+    
+<link rel="stylesheet" href="/css/diaspora.css">
+
+	<script async src="//pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+    <script>
+         (adsbygoogle = window.adsbygoogle || []).push({
+              google_ad_client: "ca-pub-8691406134231910",
+              enable_page_level_ads: true
+         });
+    </script>
+    <script async custom-element="amp-auto-ads"
+        src="https://cdn.ampproject.org/v0/amp-auto-ads-0.1.js">
+    </script>
+<meta name="generator" content="Hexo 5.2.0"></head>
+
+<body class="loading">
+    <span id="config-title" style="display:none">Hexo</span>
+    <div id="loader"></div>
+    <div id="single">
+    <div id="top" style="display: block;">
+    <div class="bar" style="width: 0;"></div>
+    <a class="iconfont icon-home image-icon" href="javascript:;" data-url="http://example.com"></a>
+    <div title="播放/暂停" class="iconfont icon-play"></div>
+    <h3 class="subtitle">HBase写性能优化</h3>
+    <div class="social">
+        <div>
+            <div class="share">
+                <a title="获取二维码" class="iconfont icon-scan" href="javascript:;"></a>
+            </div>
+            <div id="qr"></div>
+        </div>
+    </div>
+    <div class="scrollbar"></div>
+</div>
+
+    <div class="section">
+        <div class="article">
+    <div class='main'>
+        <h1 class="title">HBase写性能优化</h1>
+        <div class="stuff">
+            <span>十二月 28, 2020</span>
+            
+  <ul class="post-tags-list" itemprop="keywords"><li class="post-tags-list-item"><a class="post-tags-list-link" href="/tags/%E5%A4%A7%E6%95%B0%E6%8D%AE/" rel="tag">大数据</a></li></ul>
+
+
+        </div>
+        <div class="content markdown">
+            <h2 id="HBase服务器端优化"><a href="#HBase服务器端优化" class="headerlink" title="HBase服务器端优化"></a>HBase服务器端优化</h2><ol>
+<li>Region是否太少？</li>
+</ol>
+<p>优化原理：当前集群中表的Region个数如果小于RegionServer个数，即Num(Region of Table) &lt; Num (RegionServer)，可以考虑切分Region并尽可能分布到不同的RegionServer上以提高系统请求并发度。</p>
+<p>优化建议：在Num (Region of Table) &lt; Num (RegionServer)的场景下切分部分请求负载高的Region，并迁移到其他RegionServer。</p>
+<ol start="2">
+<li>写入请求是否均衡？</li>
+</ol>
+<p>优化原理：写入请求如果不均衡，会导致系统并发度较低，还有可能造成部分节点负载很高，进而影响其他业务。分布式系统中特别需要注意单个节点负载很高的情况，单个节点负载很高可能会拖慢整个集群，这是因为很多业务会使用Mutli批量提交读写请求，一旦其中一部分请求落到慢节点无法得到及时响应，会导致整个批量请求超时。</p>
+<p>优化建议：检查Rowkey设计以及预分区策略，保证写入请求均衡。</p>
+<h2 id="HBase客户端优化"><a href="#HBase客户端优化" class="headerlink" title="HBase客户端优化"></a>HBase客户端优化</h2><ol>
+<li>是否可以使用Bulkload方案写入？</li>
+</ol>
+<p>Bulkload是一个MapReduce程序，运行在Hadoop集群。程序的输入是指定数据源，输出是HFile文件。HFile文件生成之后再通过LoadIncrementalHFiles工具将HFile中相关元数据加载到HBase中。Bulkload方案适合将已经存在于HDFS上的数据批量导入HBase集群。相比调用API的写入方案，Bulkload方案可以更加高效、快速地导入数据，而且对HBase集群几乎不产生任何影响。</p>
+<ol start="2">
+<li>是否需要写WAL? WAL是否需要同步写入？</li>
+</ol>
+<p>优化原理：数据写入流程可以理解为一次顺序写WAL+一次写缓存，通常情况下写缓存延迟很低，因此提升写性能只能从WAL入手。HBase中可以通过设置WAL的持久化等级决定是否开启WAL机制以及HLog的落盘方式。WAL的持久化分为四个等级：SKIP_WAL，ASYNC_WAL，SYNC_WAL以及FSYNC_WAL。如果用户没有指定持久化等级，HBase默认使用SYNC_WAL等级持久化数据。在实际生产线环境中，部分业务可能并不特别关心异常情况下少量数据的丢失，而更关心数据写入吞吐量。比如某些推荐业务，这类业务即使丢失一部分用户行为数据可能对推荐结果也不会构成很大影响，但是对于写入吞吐量要求很高，不能造成队列阻塞。这种场景下可以考虑关闭WAL写入。退而求其次，有些业务必须写WAL，但可以接受WAL异步写入，这是可以考虑优化的，通常也会带来一定的性能提升。</p>
+<p>优化推荐：根据业务关注点在WAL机制与写入吞吐量之间做出选择，用户可以通过客户端设置WAL持久化等级。</p>
+<ol start="3">
+<li>Put是否可以同步批量提交？</li>
+</ol>
+<p>优化原理：HBase分别提供了单条put以及批量put的API接口，使用批量put接口可以减少客户端到RegionServer之间的RPC连接数，提高写入吞吐量。另外需要注意的是，批量put请求要么全部成功返回，要么抛出异常。</p>
+<p>优化建议：使用批量put写入请求。</p>
+<ol start="4">
+<li>Put是否可以异步批量提交？</li>
+</ol>
+<p>优化原理：如果业务可以接受异常情况下少量数据丢失，可以使用异步批量提交的方式提交请求。提交分两阶段执行：用户提交写请求，数据写入客户端缓存，并返回用户写入成功；当客户端缓存达到阈值（默认2M）后批量提交给RegionServer。需要注意的是，在某些客户端异常的情况下，缓存数据有可能丢失。</p>
+<p>优化建议：在业务可以接受的情况下开启异步批量提交，用户可以设置setAutoFlush (false)</p>
+<ol start="5">
+<li>写入KeyValue数据是否太大？</li>
+</ol>
+<p>KeyValue大小对写入性能的影响巨大。一旦遇到写入性能比较差的情况，需要分析写入性能下降是否因为写入KeyValue的数据太大。KeyValue大小对写入性能影响曲线如图<br><img src="https://upload-images.jianshu.io/upload_images/4926805-acb88af48459b61d.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="性能曲线变化"></p>
+<p>横坐标是写入的一行数据（每行数据10列）大小，左纵坐标是写入吞吐量，右纵坐标是写入平均延迟（ms）。可以看出，随着单行数据不断变大，写入吞吐量急剧下降，写入延迟在100K之后急剧增大。</p>
+
+            <!--[if lt IE 9]><script>document.createElement('audio');</script><![endif]-->
+            <audio id="audio" loop="1" preload="auto" controls="controls" data-autoplay="false">
+                <source type="audio/mpeg" src="">
+            </audio>
+            
+                <ul id="audio-list" style="display:none">
+                    
+                        
+                            <li title='0' data-url='http://link.hhtjim.com/163/425570952.mp3'></li>
+                        
+                    
+                        
+                            <li title='1' data-url='http://link.hhtjim.com/163/425570952.mp3'></li>
+                        
+                    
+                </ul>
+            
+        </div>
+        
+    <div id='gitalk-container' class="comment link"
+		data-enable='false'
+        data-ae='false'
+        data-ci=''
+        data-cs=''
+        data-r=''
+        data-o=''
+        data-a=''
+        data-d='false'
+    >查看评论</div>
+
+
+    </div>
+    
+</div>
+
+
+    </div>
+</div>
+</body>
+
+
+<script src="//lib.baomitu.com/jquery/1.8.3/jquery.min.js"></script>
+<script src="/js/plugin.js"></script>
+<script src="/js/typed.js"></script>
+<script src="/js/diaspora.js"></script>
+
+
+<link rel="stylesheet" href="/photoswipe/photoswipe.css">
+<link rel="stylesheet" href="/photoswipe/default-skin/default-skin.css">
+
+
+<script src="/photoswipe/photoswipe.min.js"></script>
+<script src="/photoswipe/photoswipe-ui-default.min.js"></script>
+
+
+<!-- Root element of PhotoSwipe. Must have class pswp. -->
+<div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
+    <!-- Background of PhotoSwipe. 
+         It's a separate element as animating opacity is faster than rgba(). -->
+    <div class="pswp__bg"></div>
+    <!-- Slides wrapper with overflow:hidden. -->
+    <div class="pswp__scroll-wrap">
+        <!-- Container that holds slides. 
+            PhotoSwipe keeps only 3 of them in the DOM to save memory.
+            Don't modify these 3 pswp__item elements, data is added later on. -->
+        <div class="pswp__container">
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+        </div>
+        <!-- Default (PhotoSwipeUI_Default) interface on top of sliding area. Can be changed. -->
+        <div class="pswp__ui pswp__ui--hidden">
+            <div class="pswp__top-bar">
+                <!--  Controls are self-explanatory. Order can be changed. -->
+                <div class="pswp__counter"></div>
+                <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+                <button class="pswp__button pswp__button--share" title="Share"></button>
+                <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+                <button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button>
+                <!-- Preloader demo http://codepen.io/dimsemenov/pen/yyBWoR -->
+                <!-- element will get class pswp__preloader--active when preloader is running -->
+                <div class="pswp__preloader">
+                    <div class="pswp__preloader__icn">
+                      <div class="pswp__preloader__cut">
+                        <div class="pswp__preloader__donut"></div>
+                      </div>
+                    </div>
+                </div>
+            </div>
+            <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
+                <div class="pswp__share-tooltip"></div> 
+            </div>
+            <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+            </button>
+            <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)">
+            </button>
+            <div class="pswp__caption">
+                <div class="pswp__caption__center"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+
+
+
+</html>
