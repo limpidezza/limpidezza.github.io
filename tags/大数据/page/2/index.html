@@ -6,7 +6,7 @@
     <meta name="referrer" content="no-referrer"/>
     <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
     <meta name="viewport" content="width=device-width, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Hexo</title>
+    <title>Tag: 大数据 - Hexo</title>
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="google" content="notranslate" />
@@ -112,9 +112,9 @@
     </div>
     
     <div id="post0">
-        <p>十二月 29, 2020</p>
-        <h2><a href="/2020/12/29/HBase%E7%9A%84%E8%AF%BB%E6%B5%81%E7%A8%8B/" title="HBase的读流程" class="posttitle">HBase的读流程</a></h2>
-        <p class="summary">对于HBase而言读取操作有两种，即get和scan。按实现上来看的话，get请求也是一种scan请求，相当于sc...</p>
+        <p>十二月 19, 2020</p>
+        <h2><a href="/2020/12/19/%E5%A4%A7%E6%95%B0%E6%8D%AE%E5%B9%B3%E5%8F%B0%E7%9A%84%E5%9F%BA%E6%9C%AC%E9%80%BB%E8%BE%91/" title="大数据平台的基本逻辑" class="posttitle">大数据平台的基本逻辑</a></h2>
+        <p class="summary">如今的应用导向逐渐从计算密集型演变为数据密集型，也就是说计算速度并不是导致系统能力不足的关键因素，关键在于数据量，...</p>
     </div>
     
 </div>
@@ -122,126 +122,18 @@
     <div id="primary">
         
 <div class="post">
-    <a href="/2020/12/28/HBase%E5%86%99%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96/" title="HBase写性能优化">
-        <img src="https://i-1.easyicon.net/2020/9/18/44d87593-ba98-4b59-a622-a7fd86fc7546.jpg" class="cover" width="680" height="440">
+    <a href="/2020/12/19/%E5%A4%A7%E6%95%B0%E6%8D%AE%E5%B9%B3%E5%8F%B0%E7%9A%84%E5%9F%BA%E6%9C%AC%E9%80%BB%E8%BE%91/" title="大数据平台的基本逻辑">
+        <img src="https://uploadfile.bizhizu.cn/up/92/82/70/9282703d265da0314e07fb15a4141f11.jpg" class="cover" width="680" height="440">
     </a>
     <div class="else">
-        <p>十二月 28, 2020</p>
-        <h3><a href="/2020/12/28/HBase%E5%86%99%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96/" title="HBase写性能优化" class="posttitle">HBase写性能优化</a></h3>
-        <p>HBase服务器端优化
-Region是否太少？
-
-优化原理：当前集群中表的Region个数如果小于RegionServer个数，即Num(Region o...</p>
-    </div>
-</div>
-
-
-<div class="post">
-    <a href="/2020/12/27/HBase%E5%86%99%E5%85%A5%E5%9F%BA%E6%9C%AC%E6%A6%82%E5%BF%B5/" title="HBase写入基本概念">
-        <img src="https://img.jk51.com/img_jk51/117845657.jpeg" class="cover" width="680" height="440">
-    </a>
-    <div class="else">
-        <p>十二月 27, 2020</p>
-        <h3><a href="/2020/12/27/HBase%E5%86%99%E5%85%A5%E5%9F%BA%E6%9C%AC%E6%A6%82%E5%BF%B5/" title="HBase写入基本概念" class="posttitle">HBase写入基本概念</a></h3>
-        <p>在HBase写入的过程中，要从client和server端两部分来看。在client端，会将写入的数据添加到本地缓冲区中，符合一定条件就会通过AsyncP...</p>
-    </div>
-</div>
-
-
-<div class="post">
-    <a href="/2020/12/25/%E7%BF%BB%E8%AF%91Coprocessor-Introduction/" title="翻译Coprocessor Introduction">
-        <img src="https://up.enterdesk.com/edpic_360_360/75/73/89/7573894bf15de398f698e7bea24e49de.jpg" class="cover" width="680" height="440">
-    </a>
-    <div class="else">
-        <p>十二月 25, 2020</p>
-        <h3><a href="/2020/12/25/%E7%BF%BB%E8%AF%91Coprocessor-Introduction/" title="翻译Coprocessor Introduction" class="posttitle">翻译Coprocessor Introduction</a></h3>
-        <p>
-原文Authors: Trend Micro Hadoop Group: Mingjie Lai, Eugene Koontz, Andrew Purt...</p>
-    </div>
-</div>
-
-
-<div class="post">
-    <a href="/2020/12/24/HBase%E4%B8%ADBlockCache%E7%9A%84%E8%AE%BE%E8%AE%A1%E7%BB%BC%E8%BF%B0/" title="HBase中BlockCache的设计综述">
-        <img src="http://image.namedq.com/uploads/20191220/16/1576832267-wTclLFhZsY.jpeg" class="cover" width="680" height="440">
-    </a>
-    <div class="else">
-        <p>十二月 24, 2020</p>
-        <h3><a href="/2020/12/24/HBase%E4%B8%ADBlockCache%E7%9A%84%E8%AE%BE%E8%AE%A1%E7%BB%BC%E8%BF%B0/" title="HBase中BlockCache的设计综述" class="posttitle">HBase中BlockCache的设计综述</a></h3>
-        <p>BlockCache用来做读缓存，在每个RegionServer上只有一个BlockCache。BlockCache的默认值为0.4，它表示可用堆的40％...</p>
-    </div>
-</div>
-
-
-<div class="post">
-    <a href="/2020/12/23/HBase%E7%9A%84%E4%BD%93%E7%B3%BB%E7%BB%93%E6%9E%84/" title="HBase的体系结构">
-        <img src="https://gss0.baidu.com/7Po3dSag_xI4khGko9WTAnF6hhy/zhidao/wh%3D600%2C800/sign=09432c7cbf014a90816b4ebb9947152a/3ac79f3df8dcd100adf56bef748b4710b8122f96.jpg" class="cover" width="680" height="440">
-    </a>
-    <div class="else">
-        <p>十二月 23, 2020</p>
-        <h3><a href="/2020/12/23/HBase%E7%9A%84%E4%BD%93%E7%B3%BB%E7%BB%93%E6%9E%84/" title="HBase的体系结构" class="posttitle">HBase的体系结构</a></h3>
-        <p>HBase的体系结构属于典型的Master-Slave模型。它的数据存储在HDFS上，ZooKeeper被使用协助管理HBase。我们可以用一张图来纵览H...</p>
-    </div>
-</div>
-
-
-<div class="post">
-    <a href="/2020/12/22/HBase%E7%9A%84%E7%B3%BB%E7%BB%9F%E7%89%B9%E6%80%A7/" title="HBase的系统特性">
-        <img src="https://up.enterdesk.com/edpic/f5/5d/fe/f55dfe14338ab8ab79b140625c8173b0.jpg" class="cover" width="680" height="440">
-    </a>
-    <div class="else">
-        <p>十二月 22, 2020</p>
-        <h3><a href="/2020/12/22/HBase%E7%9A%84%E7%B3%BB%E7%BB%9F%E7%89%B9%E6%80%A7/" title="HBase的系统特性" class="posttitle">HBase的系统特性</a></h3>
-        <p>HBase是一种“ NoSQL”数据库。NoSQL数据库的特性往往是不同于传统的RDBMS，所以对于多数NoSQL数据库而言，都有不同的特性，比如用作k-...</p>
-    </div>
-</div>
-
-
-<div class="post">
-    <a href="/2020/12/21/%E7%BF%BB%E8%AF%91-How-to-Enable-User-Authentication-and-Authorization-in-Apache-HBase/" title="翻译: How-to: Enable User Authentication and Authorization in Apache HBase">
-        <img src="https://up.enterdesk.com/edpic/41/aa/8a/41aa8ad42950e77189f75634df4eb1eb.jpg" class="cover" width="680" height="440">
-    </a>
-    <div class="else">
-        <p>十二月 21, 2020</p>
-        <h3><a href="/2020/12/21/%E7%BF%BB%E8%AF%91-How-to-Enable-User-Authentication-and-Authorization-in-Apache-HBase/" title="翻译: How-to: Enable User Authentication and Authorization in Apache HBase" class="posttitle">翻译: How-to: Enable User Authentication and Authorization in Apache HBase</a></h3>
-        <p>
-原文:  By Matteo Bertozzi
-
-使用默认的Apache HBase配置，每个人都可以读取和写入系统中所有可用的表。对于很多企业机构来说...</p>
-    </div>
-</div>
-
-
-<div class="post">
-    <a href="/2020/12/20/HBase%E7%9A%84%E5%BA%94%E7%94%A8%E5%85%B3%E9%94%AE%E7%82%B9/" title="HBase的应用关键点">
-        <img src="https://pic3.zhimg.com/v2-6fab134c3621df30c3d5b032ebf883ba_r.jpg" class="cover" width="680" height="440">
-    </a>
-    <div class="else">
-        <p>十二月 20, 2020</p>
-        <h3><a href="/2020/12/20/HBase%E7%9A%84%E5%BA%94%E7%94%A8%E5%85%B3%E9%94%AE%E7%82%B9/" title="HBase的应用关键点" class="posttitle">HBase的应用关键点</a></h3>
-        <p>表创建HBase的表创建可以通过hbase shell和Java API。另外如果需要对列簇进行修改的时候，需要先去disable表。通过Java API...</p>
-    </div>
-</div>
-
-
-<div class="post">
-    <a href="/2020/12/20/HBase%E6%95%B0%E6%8D%AE%E6%A8%A1%E5%9E%8B%E6%A6%82%E5%BF%B5/" title="HBase数据模型概念">
-        <img src="https://up.enterdesk.com/edpic/47/ae/41/47ae4146adf74923c65c45799a987234.jpg" class="cover" width="680" height="440">
-    </a>
-    <div class="else">
-        <p>十二月 20, 2020</p>
-        <h3><a href="/2020/12/20/HBase%E6%95%B0%E6%8D%AE%E6%A8%A1%E5%9E%8B%E6%A6%82%E5%BF%B5/" title="HBase数据模型概念" class="posttitle">HBase数据模型概念</a></h3>
-        <p>
-本文所述版本为HBase2.X
-
-从HBase官方文档的说法，HBase是一个multi-dimensional map（多维表），BigTable论文...</p>
+        <p>十二月 19, 2020</p>
+        <h3><a href="/2020/12/19/%E5%A4%A7%E6%95%B0%E6%8D%AE%E5%B9%B3%E5%8F%B0%E7%9A%84%E5%9F%BA%E6%9C%AC%E9%80%BB%E8%BE%91/" title="大数据平台的基本逻辑" class="posttitle">大数据平台的基本逻辑</a></h3>
+        <p>如今的应用导向逐渐从计算密集型演变为数据密集型，也就是说计算速度并不是导致系统能力不足的关键因素，关键在于数据量，数据格式以及数据的变化。应运而生的大数据...</p>
     </div>
 </div>
 
 
     </div>
-    
-    <div id="pager"><a href="/page/2/" class="more">加载更多</a></div>
     
 </div>
 <div id="preview"></div>

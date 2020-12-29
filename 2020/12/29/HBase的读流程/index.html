@@ -1,0 +1,204 @@
+
+<!DOCTYPE html>
+<html lang="en" class="loading">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="referrer" content="no-referrer"/>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+    <meta name="viewport" content="width=device-width, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>HBase的读流程 - Hexo</title>
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="google" content="notranslate" />
+    <meta name="keywords" content="Fechin,"> 
+    <meta name="description" content="对于HBase而言读取操作有两种，即get和scan。按实现上来看的话，get请求也是一种scan请求，相当于scan长度为1的请求。对于HBase而言，使用Java API，简单的读流程如下所示
+,"> 
+    <meta name="author" content="John Doe"> 
+    <link rel="alternative" href="atom.xml" title="Hexo" type="application/atom+xml"> 
+    <link rel="icon" href="/img/favicon.png"> 
+    
+    
+<link rel="stylesheet" href="/css/diaspora.css">
+
+	<script async src="//pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+    <script>
+         (adsbygoogle = window.adsbygoogle || []).push({
+              google_ad_client: "ca-pub-8691406134231910",
+              enable_page_level_ads: true
+         });
+    </script>
+    <script async custom-element="amp-auto-ads"
+        src="https://cdn.ampproject.org/v0/amp-auto-ads-0.1.js">
+    </script>
+<meta name="generator" content="Hexo 5.2.0"></head>
+
+<body class="loading">
+    <span id="config-title" style="display:none">Hexo</span>
+    <div id="loader"></div>
+    <div id="single">
+    <div id="top" style="display: block;">
+    <div class="bar" style="width: 0;"></div>
+    <a class="iconfont icon-home image-icon" href="javascript:;" data-url="http://example.com"></a>
+    <div title="播放/暂停" class="iconfont icon-play"></div>
+    <h3 class="subtitle">HBase的读流程</h3>
+    <div class="social">
+        <div>
+            <div class="share">
+                <a title="获取二维码" class="iconfont icon-scan" href="javascript:;"></a>
+            </div>
+            <div id="qr"></div>
+        </div>
+    </div>
+    <div class="scrollbar"></div>
+</div>
+
+    <div class="section">
+        <div class="article">
+    <div class='main'>
+        <h1 class="title">HBase的读流程</h1>
+        <div class="stuff">
+            <span>十二月 29, 2020</span>
+            
+  <ul class="post-tags-list" itemprop="keywords"><li class="post-tags-list-item"><a class="post-tags-list-link" href="/tags/%E5%A4%A7%E6%95%B0%E6%8D%AE/" rel="tag">大数据</a></li></ul>
+
+
+        </div>
+        <div class="content markdown">
+            <p>对于HBase而言读取操作有两种，即get和scan。按实现上来看的话，get请求也是一种scan请求，相当于scan长度为1的请求。对于HBase而言，使用Java API，简单的读流程如下所示</p>
+<ul>
+<li>get请求</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">Configuration conf &#x3D; HBaseConfiguration.create();</span><br><span class="line">HTable table &#x3D; new HTable(conf, &quot;tablename&quot;);</span><br><span class="line">Get get &#x3D; newGet(Bytes.toBytes(&quot;row1&quot;));</span><br><span class="line">get.addColumn(Bytes.toBytes(&quot;colfam1&quot;), Bytes.toBytes(&quot;qual1&quot;));</span><br><span class="line">Result result &#x3D; table.get(get);byte[] val &#x3D;result.getValue(Bytes.toBytes(&quot;colfam1&quot;),Bytes.toBytes(&quot;qual1&quot;));</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>scan请求</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">public static final byte[] CF &#x3D; &quot;cf&quot;.getBytes();</span><br><span class="line">public static final byte[] ATTR &#x3D; &quot;attr&quot;.getBytes();</span><br><span class="line">...</span><br><span class="line"></span><br><span class="line">Table table &#x3D; ...      &#x2F;&#x2F; instantiate a Table instance</span><br><span class="line"></span><br><span class="line">Scan scan &#x3D; new Scan();</span><br><span class="line">scan.addColumn(CF, ATTR);</span><br><span class="line">scan.setRowPrefixFilter(Bytes.toBytes(&quot;row&quot;));</span><br><span class="line">ResultScanner rs &#x3D; table.getScanner(scan);</span><br><span class="line">try &#123;</span><br><span class="line">  for (Result r &#x3D; rs.next(); r !&#x3D; null; r &#x3D; rs.next()) &#123;</span><br><span class="line">    &#x2F;&#x2F; process result...</span><br><span class="line">  &#125;</span><br><span class="line">&#125; finally &#123;</span><br><span class="line">  rs.close();  &#x2F;&#x2F; always close the ResultScanner!</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+<h2 id="scan框架的设计"><a href="#scan框架的设计" class="headerlink" title="scan框架的设计"></a>scan框架的设计</h2><p>如果你使用过Redis的scan操作，就知道在Redis中，scan并不会一次性加载所有数据到客户端。尽管Redis的Scan和HBase Scan之间的设计差异很大。但是总体来看，HBase的scan采用的限制一次性RPC传输数据量，分多次请求服务端获取数据。这样做的目的有两点：</p>
+<ul>
+<li>当数据量过大的查询容易引起客户端内存溢出。</li>
+<li>压缩RegionServer端的机器性能，导致其他业务收到影响。</li>
+</ul>
+<p>对于scan来说，具体的操作即<code>rs.next()</code>，如果查询到客户端的缓存中有值则直接返回，若未查询到则向Server进行RPC请求，默认情况下，一次RPC请的数据量大小为2G。</p>
+<h4 id="区间切分"><a href="#区间切分" class="headerlink" title="区间切分"></a>区间切分</h4><p>在客户端请求服务端获取数据的过程中，首先从ZooKeeper中获取元数据hbase:meta表所在的RegionServer。如果一个scan请求需要在多个region上请求数据的话，客户端在请求前会先对查询区间进行切分。如</p>
+<p>scan操作需要查询区间为<code>[&quot;b&quot;, &quot;f&quot;)</code>，这时候有三个region，startkey和endkey的区间为<code>[&quot;a&quot;, &quot;c&quot;)，[&quot;c&quot;, &quot;e&quot;)，[&quot;e&quot;,&quot;g&quot;)</code>。这时候客户端会进行切分，把scan操作的查询区间切分为<code>&quot;b&quot;, &quot;c&quot;)，[&quot;c&quot;,&quot;e&quot;)，[&quot;e&quot;, &quot;f &quot;)</code>。</p>
+<h4 id="读流程"><a href="#读流程" class="headerlink" title="读流程"></a>读流程</h4><p>Scanner的核心体系包括三层Scanner：RegionScanner，StoreScanner，MemStoreScanner和StoreFileScanner。</p>
+<p>关系图如下<br><img src="https://upload-images.jianshu.io/upload_images/4926805-885ba160b835c40b.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="Scanner关系图"></p>
+<p>通过这三层scanner定位到了具体的HFile，接下来要做的就是过滤操作，具体的有Time Range过滤、Rowkey Range过滤以及布隆过滤器。</p>
+<p>Scan的过滤流程因为StoreFile中的数据K-V数据都是有序排列的，所有范围性的过滤可以直接查找到范围。<br>在查找到具体的StoreFile文件之后，就是通过查询HFile的索引，查找到对应的Data Block。<br>HFile的结构如下图<br><img src="https://upload-images.jianshu.io/upload_images/4926805-5281cf92761dc94d.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="HFile"></p>
+<p>可以看到个HFile文件中， 都对应着多个Data Block。要查找到对应的Data Block。需要先查询Root IndexBlock去获得地址信息。Root IndexBlock因为常驻在内存中，所以这个查询过程非常快。具体的查询思路是二分法，如查询的rowkey为fc，第一次查询范围是[aa-ee)，第二次为[dd-ff)，第三次为[fa-ff)，正好这个一个Data Block的范围。<br>之后会把Data Block加载到内存中，然后循环遍历查找到对应的数据。<br>可以看出，因为多层Index都需要加载到内存中，所以一次查询的IO正常为3次。但是实际上HBase为Block提供了缓存机制，可以将频繁使用的Block缓存在内存中，以便进一步加快实际读取过程。</p>
+<p>最后这些读到的数据会被放入一个优先队列中，根据key进行排序。然后依次返回给客户端。</p>
+<h2 id="其他优化"><a href="#其他优化" class="headerlink" title="其他优化"></a>其他优化</h2><p>当然，HBase也提供了像BlockCache以及MemStore的读写缓存。可以大大优化读效率，具体细节，此篇不做展开。</p>
+
+            <!--[if lt IE 9]><script>document.createElement('audio');</script><![endif]-->
+            <audio id="audio" loop="1" preload="auto" controls="controls" data-autoplay="false">
+                <source type="audio/mpeg" src="">
+            </audio>
+            
+                <ul id="audio-list" style="display:none">
+                    
+                        
+                            <li title='0' data-url='http://link.hhtjim.com/163/425570952.mp3'></li>
+                        
+                    
+                        
+                            <li title='1' data-url='http://link.hhtjim.com/163/425570952.mp3'></li>
+                        
+                    
+                </ul>
+            
+        </div>
+        
+    <div id='gitalk-container' class="comment link"
+		data-enable='false'
+        data-ae='false'
+        data-ci=''
+        data-cs=''
+        data-r=''
+        data-o=''
+        data-a=''
+        data-d='false'
+    >查看评论</div>
+
+
+    </div>
+    
+</div>
+
+
+    </div>
+</div>
+</body>
+
+
+<script src="//lib.baomitu.com/jquery/1.8.3/jquery.min.js"></script>
+<script src="/js/plugin.js"></script>
+<script src="/js/typed.js"></script>
+<script src="/js/diaspora.js"></script>
+
+
+<link rel="stylesheet" href="/photoswipe/photoswipe.css">
+<link rel="stylesheet" href="/photoswipe/default-skin/default-skin.css">
+
+
+<script src="/photoswipe/photoswipe.min.js"></script>
+<script src="/photoswipe/photoswipe-ui-default.min.js"></script>
+
+
+<!-- Root element of PhotoSwipe. Must have class pswp. -->
+<div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
+    <!-- Background of PhotoSwipe. 
+         It's a separate element as animating opacity is faster than rgba(). -->
+    <div class="pswp__bg"></div>
+    <!-- Slides wrapper with overflow:hidden. -->
+    <div class="pswp__scroll-wrap">
+        <!-- Container that holds slides. 
+            PhotoSwipe keeps only 3 of them in the DOM to save memory.
+            Don't modify these 3 pswp__item elements, data is added later on. -->
+        <div class="pswp__container">
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+        </div>
+        <!-- Default (PhotoSwipeUI_Default) interface on top of sliding area. Can be changed. -->
+        <div class="pswp__ui pswp__ui--hidden">
+            <div class="pswp__top-bar">
+                <!--  Controls are self-explanatory. Order can be changed. -->
+                <div class="pswp__counter"></div>
+                <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+                <button class="pswp__button pswp__button--share" title="Share"></button>
+                <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+                <button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button>
+                <!-- Preloader demo http://codepen.io/dimsemenov/pen/yyBWoR -->
+                <!-- element will get class pswp__preloader--active when preloader is running -->
+                <div class="pswp__preloader">
+                    <div class="pswp__preloader__icn">
+                      <div class="pswp__preloader__cut">
+                        <div class="pswp__preloader__donut"></div>
+                      </div>
+                    </div>
+                </div>
+            </div>
+            <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
+                <div class="pswp__share-tooltip"></div> 
+            </div>
+            <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+            </button>
+            <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)">
+            </button>
+            <div class="pswp__caption">
+                <div class="pswp__caption__center"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+
+
+
+</html>
