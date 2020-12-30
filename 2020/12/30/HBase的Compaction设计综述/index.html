@@ -1,0 +1,201 @@
+
+<!DOCTYPE html>
+<html lang="en" class="loading">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="referrer" content="no-referrer"/>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+    <meta name="viewport" content="width=device-width, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>HBase的Compaction设计综述 - Hexo</title>
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="google" content="notranslate" />
+    <meta name="keywords" content="Fechin,"> 
+    <meta name="description" content="HBase使用的存储结构为LSM树，它的优势是能大大提升写效率。同时由于这种特性在HBase中，它的存储会形成一个个的小文件HFile。当HFile文件数过多的时候，会导致读取效率降低，为了解决这个,"> 
+    <meta name="author" content="John Doe"> 
+    <link rel="alternative" href="atom.xml" title="Hexo" type="application/atom+xml"> 
+    <link rel="icon" href="/img/favicon.png"> 
+    
+    
+<link rel="stylesheet" href="/css/diaspora.css">
+
+	<script async src="//pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+    <script>
+         (adsbygoogle = window.adsbygoogle || []).push({
+              google_ad_client: "ca-pub-8691406134231910",
+              enable_page_level_ads: true
+         });
+    </script>
+    <script async custom-element="amp-auto-ads"
+        src="https://cdn.ampproject.org/v0/amp-auto-ads-0.1.js">
+    </script>
+<meta name="generator" content="Hexo 5.2.0"></head>
+
+<body class="loading">
+    <span id="config-title" style="display:none">Hexo</span>
+    <div id="loader"></div>
+    <div id="single">
+    <div id="top" style="display: block;">
+    <div class="bar" style="width: 0;"></div>
+    <a class="iconfont icon-home image-icon" href="javascript:;" data-url="http://example.com"></a>
+    <div title="播放/暂停" class="iconfont icon-play"></div>
+    <h3 class="subtitle">HBase的Compaction设计综述</h3>
+    <div class="social">
+        <div>
+            <div class="share">
+                <a title="获取二维码" class="iconfont icon-scan" href="javascript:;"></a>
+            </div>
+            <div id="qr"></div>
+        </div>
+    </div>
+    <div class="scrollbar"></div>
+</div>
+
+    <div class="section">
+        <div class="article">
+    <div class='main'>
+        <h1 class="title">HBase的Compaction设计综述</h1>
+        <div class="stuff">
+            <span>十二月 30, 2020</span>
+            
+  <ul class="post-tags-list" itemprop="keywords"><li class="post-tags-list-item"><a class="post-tags-list-link" href="/tags/%E5%A4%A7%E6%95%B0%E6%8D%AE/" rel="tag">大数据</a></li></ul>
+
+
+        </div>
+        <div class="content markdown">
+            <p>HBase使用的存储结构为LSM树，它的优势是能大大提升写效率。同时由于这种特性在HBase中，它的存储会形成一个个的小文件HFile。当HFile文件数过多的时候，会导致读取效率降低，为了解决这个问题，HBase中引入了Compaction设计。（其实凡是使用LSM树作为存储结构的数据库基本都引入了类似功能）</p>
+<h2 id="Compaction的分类"><a href="#Compaction的分类" class="headerlink" title="Compaction的分类"></a>Compaction的分类</h2><p>Compaction分为<code>Minor Compaction</code>和<code>Major Compaction</code>,Minor Compaction是指选取部分小的、相邻的HFile，将它们合并成一个更大的HFile。Major Compaction是指将一个Store中所有的HFile合并成一个HFile，并且会清除其中的一些过期数据。<br>相比而言，Major Compaction持续时间会比较长。消耗的集群资源也比较大。</p>
+<p>如下图所示，当集群写数据逐渐增多时候，读延迟也会随之增加。<br><img src="https://upload-images.jianshu.io/upload_images/4926805-6513bb90bc4b91ee.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="数据量增加延时"><br>如下图所示，经过Compaction后，延迟有如下变化。<br><img src="https://upload-images.jianshu.io/upload_images/4926805-f1c851d763ea7a45.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="Compaction后的延迟"></p>
+<p>Compaction的另一个重要作用是把数据都放在本地节点。也就是同一个Region的数据，尽量合并在同一个RegionServer上，减少读请求时，网络传输带来的性能损失。</p>
+<h2 id="Compaction的基本工作原理"><a href="#Compaction的基本工作原理" class="headerlink" title="Compaction的基本工作原理"></a>Compaction的基本工作原理</h2><p>合并的基本原理是先从要合并的文件中读取所有的K-V数据，然后把这些数据进行排序，再把结果写进一个新的HFile文件中，合并完成之后，将有新的HFile文件对外提供服务。</p>
+<p>对于Compaction的工作流程可以分为以下四个步骤</p>
+<ul>
+<li>触发</li>
+<li>选取HFile</li>
+<li>执行合并<h4 id="触发"><a href="#触发" class="headerlink" title="触发"></a>触发</h4>触发有三种情况，MemStore的Flush、后台线程周期性检查以及手动触发。</li>
+<li>MemStore的Flush：每次执行完f lush操作之后，都会对当前Store中的文件数进行判断，一旦Store中总文件数大于<code>hbase.hstore.compactionThreshold</code>，就会触发Compaction。</li>
+<li>后台线程周期性检查： 总文件数大于<code>hbase.hstore.compactionThreshold</code>，一旦大于就会触发Compaction。</li>
+<li>手动触发：手动触发的动机基本实在业务低峰期进行手动触发。<h4 id="选取HFile"><a href="#选取HFile" class="headerlink" title="选取HFile"></a>选取HFile</h4>选取HFile进行合并，是整个Compaction流程的核心。通常有多种选取算法主要有两种Minor Compaction文件选择策略，一种是RatioBasedCompactionPolicy，另一种是ExploringCompactionPolicy</li>
+<li>RatioCompactionPolicy<br>设置Ratio，在高峰期ratio为1.2，非高峰期ratio为5。从老到新扫描所有候选文件，计算当前扫描到的文件大小，以及比它新的文件的所有文件总大小乘以ratio。如果前者小于后者，就进行选取。</li>
+<li>ExploringCompactionPolicy<br>该策略思路基本和RatioBasedCompactionPolicy相同，Ratio策略在找到一个合适的文件集合之后就停止扫描了，而Exploring策略会记录所有合适的文件集合，并在这些文件集合中寻找最优解。具体可<a target="_blank" rel="noopener" href="http://blog.cloudera.com/blog/2013/12/what-are-hbase-compactions/">参照文章</a>.</li>
+<li>StripeCompactionPolicy</li>
+<li>用户自定义Policy<br>用户也可以通过特定接口实现自己的Compaction策略</li>
+</ul>
+<h4 id="执行合并"><a href="#执行合并" class="headerlink" title="执行合并"></a>执行合并</h4><p>HBase实现中有一个专门的类CompactSplitThead负责接收Compaction请求和split请求，而且为了能够独立处理这些请求，这个类内部构造了多个线程池：largeCompactions、smallCompactions以及splits等。<br>选出待合并的HFile集合，再选出合适的处理线程，接下来执行合并流程。合并流程主要分为如下几步：</p>
+<ul>
+<li>分别读出待合并HFile文件的KeyValue，进行归并排序处理，之后写到./tmp目录下的临时文件中。</li>
+<li>将临时文件移动到对应Store的数据目录。</li>
+<li>将Compaction的输入文件路径和输出文件路径封装为KV写入HLog日志，并打上Compaction标记，最后强制执行sync。</li>
+<li>将对应Store数据目录下的Compaction输入文件全部删除。</li>
+</ul>
+<h2 id="优势和劣势"><a href="#优势和劣势" class="headerlink" title="优势和劣势"></a>优势和劣势</h2><p>Compaction操作重写文件会带来很大的带宽压力以及短时间IO压力。它的核心操作是批量将大量小文件合并成大文件用以提高读取性能。<br>通常可以通过设置吞吐量下限参数<code>hbase.hstore.compaction.throughput. lower.bound</code>和上限参数<code>hbase.hstore.compaction.throughput.higher.bound</code>来自动调节系统的Compaction吞吐量。<br>也可以使用<code>compactBwLimit</code>和<code>numOfFilesDisableCompactLimit</code>来限制带宽，保证不会影响集群其他业务正常运行。</p>
+
+            <!--[if lt IE 9]><script>document.createElement('audio');</script><![endif]-->
+            <audio id="audio" loop="1" preload="auto" controls="controls" data-autoplay="false">
+                <source type="audio/mpeg" src="">
+            </audio>
+            
+                <ul id="audio-list" style="display:none">
+                    
+                        
+                            <li title='0' data-url='http://link.hhtjim.com/163/425570952.mp3'></li>
+                        
+                    
+                        
+                            <li title='1' data-url='http://link.hhtjim.com/163/425570952.mp3'></li>
+                        
+                    
+                </ul>
+            
+        </div>
+        
+    <div id='gitalk-container' class="comment link"
+		data-enable='false'
+        data-ae='false'
+        data-ci=''
+        data-cs=''
+        data-r=''
+        data-o=''
+        data-a=''
+        data-d='false'
+    >查看评论</div>
+
+
+    </div>
+    
+</div>
+
+
+    </div>
+</div>
+</body>
+
+
+<script src="//lib.baomitu.com/jquery/1.8.3/jquery.min.js"></script>
+<script src="/js/plugin.js"></script>
+<script src="/js/typed.js"></script>
+<script src="/js/diaspora.js"></script>
+
+
+<link rel="stylesheet" href="/photoswipe/photoswipe.css">
+<link rel="stylesheet" href="/photoswipe/default-skin/default-skin.css">
+
+
+<script src="/photoswipe/photoswipe.min.js"></script>
+<script src="/photoswipe/photoswipe-ui-default.min.js"></script>
+
+
+<!-- Root element of PhotoSwipe. Must have class pswp. -->
+<div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
+    <!-- Background of PhotoSwipe. 
+         It's a separate element as animating opacity is faster than rgba(). -->
+    <div class="pswp__bg"></div>
+    <!-- Slides wrapper with overflow:hidden. -->
+    <div class="pswp__scroll-wrap">
+        <!-- Container that holds slides. 
+            PhotoSwipe keeps only 3 of them in the DOM to save memory.
+            Don't modify these 3 pswp__item elements, data is added later on. -->
+        <div class="pswp__container">
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+        </div>
+        <!-- Default (PhotoSwipeUI_Default) interface on top of sliding area. Can be changed. -->
+        <div class="pswp__ui pswp__ui--hidden">
+            <div class="pswp__top-bar">
+                <!--  Controls are self-explanatory. Order can be changed. -->
+                <div class="pswp__counter"></div>
+                <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+                <button class="pswp__button pswp__button--share" title="Share"></button>
+                <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+                <button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button>
+                <!-- Preloader demo http://codepen.io/dimsemenov/pen/yyBWoR -->
+                <!-- element will get class pswp__preloader--active when preloader is running -->
+                <div class="pswp__preloader">
+                    <div class="pswp__preloader__icn">
+                      <div class="pswp__preloader__cut">
+                        <div class="pswp__preloader__donut"></div>
+                      </div>
+                    </div>
+                </div>
+            </div>
+            <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
+                <div class="pswp__share-tooltip"></div> 
+            </div>
+            <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+            </button>
+            <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)">
+            </button>
+            <div class="pswp__caption">
+                <div class="pswp__caption__center"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+
+
+
+</html>

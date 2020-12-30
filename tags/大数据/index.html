@@ -112,15 +112,27 @@
     </div>
     
     <div id="post0">
-        <p>十二月 29, 2020</p>
-        <h2><a href="/2020/12/29/HBase%E7%9A%84%E8%AF%BB%E6%B5%81%E7%A8%8B/" title="HBase的读流程" class="posttitle">HBase的读流程</a></h2>
-        <p class="summary">对于HBase而言读取操作有两种，即get和scan。按实现上来看的话，get请求也是一种scan请求，相当于sc...</p>
+        <p>十二月 30, 2020</p>
+        <h2><a href="/2020/12/30/HBase%E7%9A%84Compaction%E8%AE%BE%E8%AE%A1%E7%BB%BC%E8%BF%B0/" title="HBase的Compaction设计综述" class="posttitle">HBase的Compaction设计综述</a></h2>
+        <p class="summary">HBase使用的存储结构为LSM树，它的优势是能大大提升写效率。同时由于这种特性在HBase中，它的存储会形成一个...</p>
     </div>
     
 </div>
 
     <div id="primary">
         
+<div class="post">
+    <a href="/2020/12/29/HBase%E7%9A%84%E8%AF%BB%E6%B5%81%E7%A8%8B/" title="HBase的读流程">
+        <img src="https://gimg2.baidu.com/image_search/src=http%3A%2F%2Fb-ssl.duitang.com%2Fuploads%2Fitem%2F201601%2F16%2F20160116172551_My53E.jpeg&refer=http%3A%2F%2Fb-ssl.duitang.com&app=2002&size=f9999,10000&q=a80&n=0&g=0n&fmt=jpeg" class="cover" width="680" height="440">
+    </a>
+    <div class="else">
+        <p>十二月 29, 2020</p>
+        <h3><a href="/2020/12/29/HBase%E7%9A%84%E8%AF%BB%E6%B5%81%E7%A8%8B/" title="HBase的读流程" class="posttitle">HBase的读流程</a></h3>
+        <p>对于HBase而言读取操作有两种，即get和scan。按实现上来看的话，get请求也是一种scan请求，相当于scan长度为1的请求。对于HBase而言，...</p>
+    </div>
+</div>
+
+
 <div class="post">
     <a href="/2020/12/28/HBase%E5%86%99%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96/" title="HBase写性能优化">
         <img src="https://i-1.easyicon.net/2020/9/18/44d87593-ba98-4b59-a622-a7fd86fc7546.jpg" class="cover" width="680" height="440">
@@ -220,21 +232,6 @@ Region是否太少？
         <p>十二月 20, 2020</p>
         <h3><a href="/2020/12/20/HBase%E7%9A%84%E5%BA%94%E7%94%A8%E5%85%B3%E9%94%AE%E7%82%B9/" title="HBase的应用关键点" class="posttitle">HBase的应用关键点</a></h3>
         <p>表创建HBase的表创建可以通过hbase shell和Java API。另外如果需要对列簇进行修改的时候，需要先去disable表。通过Java API...</p>
-    </div>
-</div>
-
-
-<div class="post">
-    <a href="/2020/12/20/HBase%E6%95%B0%E6%8D%AE%E6%A8%A1%E5%9E%8B%E6%A6%82%E5%BF%B5/" title="HBase数据模型概念">
-        <img src="https://up.enterdesk.com/edpic/47/ae/41/47ae4146adf74923c65c45799a987234.jpg" class="cover" width="680" height="440">
-    </a>
-    <div class="else">
-        <p>十二月 20, 2020</p>
-        <h3><a href="/2020/12/20/HBase%E6%95%B0%E6%8D%AE%E6%A8%A1%E5%9E%8B%E6%A6%82%E5%BF%B5/" title="HBase数据模型概念" class="posttitle">HBase数据模型概念</a></h3>
-        <p>
-本文所述版本为HBase2.X
-
-从HBase官方文档的说法，HBase是一个multi-dimensional map（多维表），BigTable论文...</p>
     </div>
 </div>
 
