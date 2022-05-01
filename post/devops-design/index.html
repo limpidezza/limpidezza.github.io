@@ -1,22 +1,104 @@
-<?xml version="1.0" encoding="utf-8"?>
-<feed xmlns="http://www.w3.org/2005/Atom">
-    <id>https://limpidezza.github.io</id>
-    <title>limpidezza</title>
-    <updated>2022-05-01T04:45:39.635Z</updated>
-    <generator>https://github.com/jpmonette/feed</generator>
-    <link rel="alternate" href="https://limpidezza.github.io"/>
-    <link rel="self" href="https://limpidezza.github.io/atom.xml"/>
-    <subtitle>智者不愁，多为少忧</subtitle>
-    <logo>https://limpidezza.github.io/images/avatar.png</logo>
-    <icon>https://limpidezza.github.io/favicon.ico</icon>
-    <rights>All rights reserved 2022, limpidezza</rights>
-    <entry>
-        <title type="html"><![CDATA[DevOps的设计实践]]></title>
-        <id>https://limpidezza.github.io/post/devops-design/</id>
-        <link href="https://limpidezza.github.io/post/devops-design/">
-        </link>
-        <updated>2021-12-14T16:00:00.000Z</updated>
-        <content type="html"><![CDATA[<h2 id="1-起源">1. 起源</h2>
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" >
+
+<title>DevOps的设计实践 | limpidezza</title>
+
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/all.css" integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous">
+<link rel="shortcut icon" href="https://limpidezza.github.io/favicon.ico?v=1651380327356">
+<link rel="stylesheet" href="https://limpidezza.github.io/styles/main.css">
+
+
+
+<link rel="stylesheet" href="https://unpkg.com/aos@next/dist/aos.css" />
+<script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+
+
+
+    <meta name="description" content="1. 起源
+起初对于DevOps的概念的理解仅仅停留在“使用Bamboo自动化部署服务到指定环境上”，当我们开始尝试着对DevOps的流程开始做推广，首先确定的方案是，推动各组使用Bamboo做CI/CD的集成，第二是针对当前项目面临管理混..." />
+    <meta name="keywords" content="devops" />
+  </head>
+  <body>
+    <div id="app" class="main">
+
+      <div class="sidebar" :class="{ 'full-height': menuVisible }">
+  <div class="top-container" data-aos="fade-right">
+    <div class="top-header-container">
+      <a class="site-title-container" href="https://limpidezza.github.io">
+        <img src="https://limpidezza.github.io/images/avatar.png?v=1651380327356" class="site-logo">
+        <h1 class="site-title">limpidezza</h1>
+      </a>
+      <div class="menu-btn" @click="menuVisible = !menuVisible">
+        <div class="line"></div>
+      </div>
+    </div>
+    <div>
+      
+        
+          <a href="/" class="site-nav">
+            首页
+          </a>
+        
+      
+        
+          <a href="/archives" class="site-nav">
+            归档
+          </a>
+        
+      
+        
+          <a href="/tags" class="site-nav">
+            标签
+          </a>
+        
+      
+        
+          <a href="/post/about" class="site-nav">
+            关于
+          </a>
+        
+      
+    </div>
+  </div>
+  <div class="bottom-container" data-aos="flip-up" data-aos-offset="0">
+    <div class="social-container">
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    </div>
+    <div class="site-description">
+      智者不愁，多为少忧
+    </div>
+    <div class="site-footer">
+      Powered by <a href="https://github.com/getgridea/gridea" target="_blank">Gridea</a> | <a class="rss" href="https://limpidezza.github.io/atom.xml" target="_blank">RSS</a>
+    </div>
+  </div>
+</div>
+
+
+      <div class="main-container">
+        <div class="content-container" data-aos="fade-up">
+          <div class="post-detail">
+            <h2 class="post-title">DevOps的设计实践</h2>
+            <div class="post-date">2021-12-15</div>
+            
+              <div class="feature-container" style="background-image: url('https://limpidezza.github.io/post-images/devops-design.jpg')">
+              </div>
+            
+            <div class="post-content" v-pre>
+              <h2 id="1-起源">1. 起源</h2>
 <p>起初对于DevOps的概念的理解仅仅停留在“使用Bamboo自动化部署服务到指定环境上”，当我们开始尝试着对DevOps的流程开始做推广，首先确定的方案是，推动各组使用Bamboo做CI/CD的集成，第二是针对当前项目面临管理混乱的痛点问题，进行项目发版采用语义化版本管理。但正如康威定律所言，“设计系统的组织其产生的设计等价于组织间的沟通结构。”，我们不能仅仅在一次讨论中确定的方案就企图变革组织间的长达几年的沟通协作习惯。并且DevOps也不简单是一个普适的解决方案，它是一个<strong>平台（Platform）、流程（Process）和人（People）的有机整合。</strong><br>
 <img src="https://upload-images.jianshu.io/upload_images/4926805-ba45075eeff330f4.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="DevOps关系图" loading="lazy"></p>
 <h4 id="11-文化">1.1 文化</h4>
@@ -132,6 +214,45 @@ dynamically orchestrating those containers to optimize resource utilization.<br>
 这也是我在基础设施建设工作中，坚持积累云原生技术方案的原因，云原生的技术方案，我始终认为它能大大推进我司效率建设和技术发展。即便我们在云原生的方案技术积累还不足够，比如还不能确认大数据在容器中运行的效率这类技术问题，但是当我们建设起更具效率的运营一体化流程，也就有更多的资本去进行试错，这片星辰大海等待我们去探索。</p>
 <h4 id="32-持续改进">3.2 持续改进</h4>
 <p>我们都期待完美，但在绝大多数时候，任何事情都不可能完美。软件更是如此，DevOps亦是如此。我们能做的就是基于每次的反馈，一点点的改进流程，一次次的反思提高。在不断的持续改进中，可能永远触及不到完美，但是就像美国著名女演员莉莉·汤姆林（Lily Tomlin）的那句经典名言所说的那样：<strong>The road to success is always under construction.（通往成功的道路，永远在建设之中）</strong>。</p>
-]]></content>
-    </entry>
-</feed>
+
+            </div>
+            
+              <div class="tag-container">
+                
+                  <a href="https://limpidezza.github.io/tag/eUsFNyIPt/" class="tag">
+                    devops
+                  </a>
+                
+              </div>
+            
+            
+
+            
+
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <script src="https://unpkg.com/aos@next/dist/aos.js"></script>
+<script type="application/javascript">
+
+AOS.init();
+
+var app = new Vue({
+  el: '#app',
+  data: {
+    menuVisible: false,
+  },
+})
+
+</script>
+
+
+
+
+
+
+  </body>
+</html>
